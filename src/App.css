@@ -1,38 +1,291 @@
-.App {
-  text-align: center;
+body {
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+  background: #f4f6f9;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+.dashboard {
+  display: flex;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+/* Main Content */
+.main-content { padding: 20px; width: 97%; }
+.header-row { display: flex; justify-content: space-between; align-items: center; }
+.main-title { font-size: 32px; font-weight: 800; }
+.red-text { color: #cc0000; }
+.blue-text { color: #d8ca09; }
+
+/* The Dark Blue Container */
+.blue-grid-container {
+  background: #030a49;
+  padding: 20px;
+  border-radius: 12px;
+  position: relative;
+  box-sizing: border-box; 
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+/* 3 Columns Grid */
+.officer-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); 
+  gap: 15px;
+  width: 100%;
+}
+
+/* Card Styling */
+.officer-card {
+  background: #d9d9d9;
+  border-radius: 12px;
+  padding: 15px;
+}
+
+.card-top { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.avatar-wrapper { width: 55px; height: 55px; border-radius: 50%; border: 3px solid; overflow: hidden; }
+.avatar-wrapper img { width: 100%; }
+.name-details h4 { font-size: 15px; color: #062553; margin: 0; }
+.name-details p { font-size: 14px; margin: 0; color: #000000; }
+.rfa-count { margin-left: auto; font-weight: bold; font-size: 12px; padding-top: 40px; }
+
+
+/* Header Actions (Filter & Button) */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.filter-group select {
+  padding: 5px 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  min-width: 150px;
+}
+
+.manage-btn {
+  background: #0b2a59;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.status-text { font-size: 11px; display: flex; align-items: center; gap: 5px; text-decoration: underline; }
+.dot { width: 8px; height: 8px; border-radius: 50%; }
+
+.status-selector-row { font-size: 11px; margin-bottom: 10px; }
+.mini-select { border-radius: 4px; padding: 2px; }
+
+/* Inner Table */
+.inner-table { width: 100%; background: white; border-radius: 10px; border-collapse: collapse; font-size: 9px; overflow: hidden; }
+.inner-table th { background: #eee; padding: 5px; }
+.inner-table td { padding: 5px; text-align: center; border-bottom: 1px solid #ddd; }
+
+.red-t { color: #cc0000; }
+.green-t { color: #0db334; }
+
+
+/* Pagination */
+.pagination-dots { text-align: center; margin-top: 20px; }
+.pagination-dots .dot { height: 8px; width: 8px; background-color: #bbb; display: inline-block; margin: 0 5px; }
+.pagination-dots .dot.active { background-color: white; width: 20px; border-radius: 10px; }
+
+
+/* Ensure the status dot is a perfect circle */
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.status-text {
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px; /* Gap between dot and text */
+  margin-top: 2px;
+}
+
+/* Style for the mini dropdown */
+.mini-select {
+  border-radius: 4px;
+  padding: 2px 5px;
+  font-size: 10px;
+  border: 1px solid #ccc;
+  background: white;
+  cursor: pointer;
+  outline: none;
+}
+
+.mini-select:hover {
+  border-color: #030a49;
+}
+
+/* Ensure avatar wrapper shows the status color clearly */
+.avatar-wrapper {
+  width: 55px;
+  height: 55px;
+  border-radius: 50%;
+  border: 3px solid; 
+  overflow: hidden;
+  background: #fff;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  overflow-x: hidden; 
+}
+
+/* If you are using a main layout wrapper and modal */
+.app-container {
+  display: flex;
+  width: 100%;
+  max-width: 100vw;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.7); 
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000; 
+}
+
+.details-modal {
+  background: white;
+  padding: 30px;
+  border-radius: 20px;
+  width: 400px;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.clickable-row:hover {
+  background-color: #007bff !important; 
+  color: white !important;
+  cursor: pointer;
+}
+
+.clickable-row:hover td {
+  color: white !important;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.modal-title {
+  font-size: 20px;
+  font-weight: bold;
+  margin: 0;
+}
+
+.modal-body-content {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  gap: 15px; 
 }
 
-.App-link {
-  color: #61dafb;
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.detail-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 5px;
+  margin-left: 2px;
+}
+
+/* The light gray pill box */
+.modal-field {
+  background-color: #efefef; 
+  padding: 12px 15px;
+  border-radius: 10px; 
+  color: #777; 
+  font-size: 14px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #000;
+  line-height: 1;
+}
+
+
+/* NEW SCROLLABLE TABLE STYLES */
+
+.inner-table-wrapper {
+  max-height: 110px;    
+  overflow-y: auto;     
+  overflow-x: hidden;   
+  background: white;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+}
+
+/* Ensure the inner-table doesn't have overflow hidden so sticky works */
+.inner-table {
+  width: 100%;
+  background: white;
+  border-collapse: collapse;
+  font-size: 9px;
+  overflow: visible; 
+}
+
+
+/* Optional: Make the table header stay at the top when scrolling */
+.inner-table thead th {
+  position: sticky;
+  top: 0;
+  background: #eee;
+  z-index: 10;
+}
+
+/* Optional: Custom scrollbar styling to make it look cleaner */
+.inner-table-wrapper::-webkit-scrollbar {
+  width: 6px;
+}
+.inner-table-wrapper::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+.inner-table-wrapper::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 10px;
+}
+.inner-table-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #888;
 }

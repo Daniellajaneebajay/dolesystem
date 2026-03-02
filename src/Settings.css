@@ -1,0 +1,196 @@
+/* Container & Background Split */
+.settings-page {
+    position: relative;
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    background-color: #f0f2f5; /* Fallback */
+    overflow: hidden;
+}
+
+/* Red and Dark Blue Diagonal Background */
+.settings-bg-split {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    /* Creates the sharp red/dark-blue split from the image */
+    background: linear-gradient(150deg, #e90202ea 45%, #001a4d 45%);
+    z-index: 1;
+}
+
+.settings-content-wrapper {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    max-width: 900px;
+    padding: 40px;
+}
+
+.settings-header h1 {
+    color: #f5efef;
+    font-size: 32px;
+    margin-bottom: 40px;
+    font-weight: 800;
+}
+
+.settings-main-layout {
+    display: flex;
+    gap: 40px;
+}
+
+.settings-left-column, .settings-right-column {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+/* Card Styles */
+.settings-card {
+    background: rgb(228, 225, 225);
+    border-radius: 20px;
+    padding: 30px;
+}
+
+.shadow-glow {
+    /* Subtle gold-ish glow from your image */
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1), 0 0 15px rgba(212, 175, 55, 0.2);
+}
+
+.settings-card h3 {
+    margin-top: 0;
+    color: #333;
+    font-size: 1.2rem;
+    margin-bottom: 25px;
+}
+
+/* Notifications */
+.notif-control {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    color: #777;
+}
+
+.notif-status-labels {
+    display: flex;
+    gap: 30px;
+    font-weight: bold;
+}
+
+.text-blue { color: #009dff; }
+.text-gray { color: #ccc; }
+
+/* Custom Switch */
+.settings-switch {
+    position: relative;
+    width: 55px;
+    height: 28px;
+}
+
+.settings-switch input { opacity: 0; width: 0; height: 0; }
+
+.settings-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 34px;
+}
+
+.settings-slider:before {
+    position: absolute;
+    content: "";
+    height: 22px; width: 22px;
+    left: 3px; bottom: 3px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .settings-slider { background-color: #2b6cb0; }
+input:checked + .settings-slider:before { transform: translateX(26px); }
+
+/* Buttons */
+.btn-delete-account {
+    background: #ff0000;
+    color: white;
+    border: none;
+    padding: 15px;
+    width: 100%;
+    border-radius: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 20px;
+    box-shadow: 0 5px 15px rgba(255, 0, 0, 0.3);
+}
+
+.profile-card-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.profile-avatar-border {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    border: 5px solid #ff0000;
+    overflow: hidden;
+    margin-bottom: 5px;
+}
+
+.profile-avatar-img { width: 100%; height: 100%; object-fit: cover; }
+
+.btn-logout-settings {
+    background: #009dff;
+    color: white;
+    border: none;
+    padding: 10px 40px;
+    border-radius: 10px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+/* Actions Footer */
+.settings-action-footer {
+    margin-top: 60px;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+}
+
+.btn-save-changes {
+    background: #009dff;
+    color: white;
+    border: none;
+    padding: 15px 40px;
+    border-radius: 10px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.btn-discard-settings {
+    background: white;
+    color: #333;
+    border: 1px solid #ccc;
+    padding: 15px 40px;
+    border-radius: 10px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.settings-input-container input {
+    width: 100%;
+    padding: 12px;
+    background: #e9ecef;
+    border: none;
+    border-radius: 10px;
+    box-sizing: border-box;
+}
