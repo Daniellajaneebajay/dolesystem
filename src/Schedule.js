@@ -45,18 +45,49 @@ const Schedule = () => {
           <h2 className="section-title">Create New Schedule</h2>
           
           <div className="input-group">
-            <label>Purpose</label>
-            <input type="text" className="sched-input" placeholder="Type here" />
+            <label>Purpose:</label>
+            <input type="text" className="sched-input" placeholder="Reason" />
+          </div>
+
+           <div className="row-group">
+            <div className="input-group">
+              <label>Requesting Party:</label>
+            <input type="text" className="sched-input-output" placeholder="Name" />
+            </div>
+            <div className="input-group">
+              <label>Responding Party:</label>
+            <input type="text" className="sched-input-output" placeholder="Name" />
+            </div>
           </div>
 
           <div className="row-group">
             <div className="input-group">
-              <label>Available day</label>
-            <input type="text" className="sched-input-output" placeholder="Type here" />
+              <label>Available day:</label>
+            <input type="text" className="sched-input-output" placeholder="Month|Day|Year" />
             </div>
             <div className="input-group">
-              <label>Available time</label>
-            <input type="text" className="sched-input-output" placeholder="Type here" />
+              <label>Available time:</label>
+              <div className="select-wrapper">
+                <select className="sched-input">
+                  <option>Select</option>
+                  <option>8:30 am to 9:00 am</option>
+                  <option>9:00 am to 9:30 am</option>
+                  <option>9:30 am to 10:00 am</option>
+                  <option>10:00 am to 10:30 am</option>
+                  <option>10:30 am to 11:00 am</option>
+                  <option>11:00 am to 11:30 am</option>
+                  <option>11:30 am to 12:00 pm</option>
+                  <option>1:00 pm to 1:30 pm</option>
+                  <option>1:30 pm to 2:00 pm</option>
+                  <option>2:00 pm to 2:30 pm</option>
+                  <option>2:30 pm to 3:00 pm</option>
+                  <option>3:00 pm to 3:30 pm</option>
+                  <option>3:30 pm to 4:00 pm</option>
+                  <option>4:00 pm to 4:30 pm</option>
+                  <option>4:30 pm to 5:00 pm</option>
+                </select>
+                <FaChevronDown className="select-icon" />
+              </div>
             </div>
           </div>
 
@@ -87,7 +118,7 @@ const Schedule = () => {
               </div>
             </div>
             <div className="input-group">
-              <label className="sub-label">Other Issues</label>
+              <label className="sub-label">Other Issues:</label>
             <input type="text" className="sched-input-output" placeholder="Type here" />
             </div>
           </div>
