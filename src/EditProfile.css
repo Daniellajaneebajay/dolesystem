@@ -1,0 +1,517 @@
+.profile-wrapper {
+    width: 100%;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.photo-flex-container {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    width: 100%;
+    margin-bottom: 40px;
+}
+
+.upload-box {
+    flex: 1;
+    border: 2px dashed #9ca3af;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.upload-box:hover {
+    background-color: #f9fafb;
+    border-color: #0b45b1;
+}
+
+/* --- RESPONSIVE MEDIA QUERIES --- */
+
+/* Tablets and Small Desktops (under 992px) */
+@media (max-width: 992px) {
+    .outer-card {
+        flex-direction: column; /* Stack the intro and the form */
+        gap: 15px;
+    }
+    
+    .card-intro {
+        width: 100%;
+    }
+}
+
+/* Mobile Phones (under 600px) */
+@media (max-width: 600px) {
+    .profile-wrapper {
+        padding: 10px;
+    }
+
+    .photo-flex-container {
+        flex-direction: column; /* Stack avatar on top of upload box */
+        text-align: center;
+    }
+
+    .form-row {
+        flex-direction: column; /* Stack First and Last name */
+        gap: 0;
+    }
+
+    .upload-box {
+        width: 100%;
+        margin: 0;
+    }
+
+    .avatar-large img {
+        width: 120px;
+        height: 120px;
+    }
+
+    .profile-header h1 {
+        font-size: 18px;
+    }
+}
+
+/* import to ensure consistency across the screen */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+
+.profile-wrapper {
+    width: 100%;
+    min-height: 100vh;
+    font-family: 'Poppins', sans-serif;
+    padding: 30px;
+    background-color: #f3f4f6; /* Light grey background ensures white cards are visible */
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+
+.profile-header {
+    background-color: #0b45b1; /* Blue Header from image */
+    padding: 20px 30px;
+    border-radius: 12px;
+    margin-bottom: 25px;
+    color: white;
+}
+
+.profile-header h1 {
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.profile-header p {
+    font-size: 10px;
+    margin: 2px 0 0 0;
+    opacity: 0.9;
+}
+
+/* --- Notification Toast (Add to App.css or Global) --- */
+.notification-toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 15px 25px;
+    border-radius: 8px;
+    color: white;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 10000;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    animation: slideIn 0.3s ease-out;
+}
+
+.notification-toast.success { background-color: #059669; }
+
+@keyframes slideIn {
+    from { transform: translateX(120%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+/* --- The White Outer Card Structure --- */
+.outer-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 25px;
+    display: flex;
+    gap: 30px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.card-intro {
+    width: 30%;
+    min-width: 180px;
+}
+
+.card-intro h2 {
+    font-size: 14px;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 6px;
+}
+
+.card-intro p {
+    font-size: 10px;
+    color: #6b7280;
+    line-height: 1.5;
+}
+
+/* --- The Grey Inner Card Structure (Form Area) --- */
+.inner-card {
+    flex: 1;
+    background: #e5e7eb; /* Exact grey background from your image */
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    position: relative; /* For actions alignment */
+}
+
+/* --- Form Grid & Groups --- */
+.form-row {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 10px;
+}
+
+.form-group {
+    flex: 1;
+    margin-bottom: 10px;
+}
+
+.form-group.last-in-card {
+    margin-bottom: 0;
+}
+
+.form-group label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 4px;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 6px;
+    border: 1px solid #d1d5db;
+    background: #ffffff;
+    font-family: 'Poppins', sans-serif;
+    font-size: 11px;
+    color: #1f2937;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.form-group input:focus {
+    border-color: #0b45b1;
+}
+
+/* --- Input with Eye Icon (Security Section) --- */
+.input-with-icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.icon-trigger {
+    position: absolute;
+    right: 12px;
+    color: #9ca3af;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+}
+
+/* --- Photo Upload Styling --- */
+.photo-flex {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px;
+}
+
+.avatar-large img {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #cc313a; /* Exact Red border from image */
+}
+
+.upload-box {
+    flex: 1;
+    border: 2px dashed #9ca3af;
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    color: #6b7280;
+    margin: 0 20px;
+}
+
+.upload-icon-svg {
+    font-size: 24px;
+    color: #0b45b1; /* Blue cloud icon */
+}
+
+.upload-box p {
+    font-size: 10px;
+    margin: 4px 0 0 0;
+}
+
+/* --- Text Action Buttons (Cancel/Save) --- */
+.card-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 15px;
+}
+
+/* Specific styling for Section 1 (Photo Upload) */
+.card-actions-fixed {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    position: absolute;
+    bottom: 12px;
+    right: 15px;
+}
+
+/* EditProfile.css */
+
+/* import to ensure consistency across the screen */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+
+.profile-wrapper {
+    width: 100%;
+    min-height: 100vh;
+    font-family: 'Poppins', sans-serif;
+    padding: 30px;
+    background-color: #f3f4f6; /* Light grey background ensures white cards are visible */
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+
+.profile-header {
+    background-color: #0b45b1; /* Blue Header from image */
+    padding: 20px 30px;
+    border-radius: 12px;
+    margin-bottom: 25px;
+    color: white;
+}
+
+.profile-header h1 {
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.profile-header p {
+    font-size: 10px;
+    margin: 2px 0 0 0;
+    opacity: 0.9;
+}
+
+/* --- Notification Toast (Add to App.css or Global) --- */
+.notification-toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 15px 25px;
+    border-radius: 8px;
+    color: white;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 10000;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    animation: slideIn 0.3s ease-out;
+}
+
+.notification-toast.success { background-color: #059669; }
+
+@keyframes slideIn {
+    from { transform: translateX(120%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+/* --- The White Outer Card Structure --- */
+.outer-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 25px;
+    display: flex;
+    gap: 30px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.card-intro {
+    width: 30%;
+    min-width: 180px;
+}
+
+.card-intro h2 {
+    font-size: 14px;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 6px;
+}
+
+.card-intro p {
+    font-size: 10px;
+    color: #6b7280;
+    line-height: 1.5;
+}
+
+/* --- The Grey Inner Card Structure (Form Area) --- */
+.inner-card {
+    flex: 1;
+    background: #e5e7eb; /* Exact grey background from your image */
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    position: relative; /* For actions alignment */
+}
+
+/* --- Form Grid & Groups --- */
+.form-row {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 10px;
+}
+
+.form-group {
+    flex: 1;
+    margin-bottom: 10px;
+}
+
+.form-group.last-in-card {
+    margin-bottom: 0;
+}
+
+.form-group label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 4px;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 6px;
+    border: 1px solid #d1d5db;
+    background: #ffffff;
+    font-family: 'Poppins', sans-serif;
+    font-size: 11px;
+    color: #1f2937;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.form-group input:focus {
+    border-color: #0b45b1;
+}
+
+/* --- Input with Eye Icon (Security Section) --- */
+.input-with-icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.icon-trigger {
+    position: absolute;
+    right: 12px;
+    color: #9ca3af;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+}
+
+/* --- Photo Upload Styling --- */
+.photo-flex {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px;
+}
+
+.avatar-large img {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #cc313a; /* Exact Red border from image */
+}
+
+.upload-box {
+    flex: 1;
+    border: 2px dashed #9ca3af;
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    color: #6b7280;
+    margin: 0 20px;
+}
+
+.upload-icon-svg {
+    font-size: 24px;
+    color: #0b45b1; /* Blue cloud icon */
+}
+
+.upload-box p {
+    font-size: 10px;
+    margin: 4px 0 0 0;
+}
+
+/* --- Text Action Buttons (Cancel/Save) --- */
+.card-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 15px;
+}
+
+
+.card-actions-fixed {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    position: absolute;
+    bottom: 12px;
+    right: 15px;
+}
+
+.btn-text {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 12px; 
+    padding: 0 5px;
+}
+
+.btn-text.cancel { 
+    color: #f94144; 
+} 
+
+.btn-text.save { 
+    color: #0b45b1; 
+}
+
+.btn-text:hover { 
+    opacity: 0.7; 
+    transform: translateY(-1px);
+}

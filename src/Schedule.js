@@ -1,8 +1,27 @@
-import React from 'react';
+import React, { useState } from 'react';
 import './Schedule.css';
+import ActivityLog from './ActivityLog'; // Import the log component we created
 import { FaChevronLeft, FaChevronRight, FaClock, FaChevronDown } from 'react-icons/fa';
 
 const Schedule = () => {
+  // --- NEW STATE FOR NAVIGATION ---
+  const [showLog, setShowLog] = useState(false);
+
+  // Setup state to track the currently viewed month/year
+  const [currentDate, setCurrentDate] = useState(new Date(2026, 1, 1));
+
+  // Calendar Logic Calculations
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+  const monthName = currentDate.toLocaleString('default', { month: 'long' });
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDayIndex = new Date(year, month, 1).getDay();
+  const startingOffset = firstDayIndex === 0 ? 6 : firstDayIndex - 1;
+
+  // Handlers for navigation arrows
+  const handlePrevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
+  const handleNextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
+
   const getDayStatus = (day) => {
     if ([5, 15, 17, 18, 23, 24].includes(day)) return "available";
     if ([1, 12, 25].includes(day)) return "limited";
@@ -10,9 +29,14 @@ const Schedule = () => {
     return "";
   };
 
+  // --- CONDITIONAL RENDERING ---
+  // If showLog is true, render the ActivityLog component instead
+  if (showLog) {
+    return <ActivityLog onBack={() => setShowLog(false)} />;
+  }
+
   return (
     <div className="schedule-page-wrapper">
-      {/* This is the red shape in the background on the right */}
       <div className="red-bg-accent"></div>
 
       <div className="schedule-container">
@@ -22,27 +46,17 @@ const Schedule = () => {
           
           <div className="input-group">
             <label>Purpose</label>
-            <input type="text" className="input-field" placeholder="Type here" />
+            <input type="text" className="sched-input" placeholder="Type here" />
           </div>
 
           <div className="row-group">
             <div className="input-group">
               <label>Available day</label>
-              <div className="select-wrapper">
-                <select className="input-field">
-                  <option>Tuesday 13 Feb, 2026</option>
-                </select>
-                <FaChevronDown className="select-icon" />
-              </div>
+            <input type="text" className="sched-input-output" placeholder="Type here" />
             </div>
             <div className="input-group">
               <label>Available time</label>
-              <div className="select-wrapper">
-                <select className="input-field">
-                  <option>09:30 AM - 10:30 AM</option>
-                </select>
-                <FaChevronDown className="select-icon" />
-              </div>
+            <input type="text" className="sched-input-output" placeholder="Type here" />
             </div>
           </div>
 
@@ -51,40 +65,51 @@ const Schedule = () => {
             <div className="input-group">
               <label className="sub-label">Labor Standards Violations</label>
               <div className="select-wrapper">
-                <select className="input-field">
+                <select className="sched-input">
                   <option>Select</option>
                   <option>Minimum Wage</option>
+                  <option>COLA</option>
+                  <option>Night Shift Differential</option>
                   <option>Overtime Pay</option>
+                  <option>Holiday Pay</option>
                   <option>13th Month Pay</option>
+                  <option>Service Charge</option>
+                  <option>Premium Pay for Rest Day</option>
+                  <option>Premium Pay for Special Day</option>
+                  <option>Service Incentive Leave</option>
+                  <option>Maternity Leave</option>
+                  <option>Paternity Leave</option>
+                  <option>Parental Leave for Solo Parent</option>
+                  <option>Leave for Victims of VAWC</option>
+                  <option>Special Leave for Women</option>
                 </select>
                 <FaChevronDown className="select-icon" />
               </div>
             </div>
             <div className="input-group">
               <label className="sub-label">Other Issues</label>
-              <div className="select-wrapper">
-                <select className="input-field">
-                  <option>Select</option>
-                  <option>Illegal Dismissal</option>
-                  <option>Constructive Dismissal</option>
-                </select>
-                <FaChevronDown className="select-icon" />
-              </div>
+            <input type="text" className="sched-input-output" placeholder="Type here" />
             </div>
           </div>
 
           <div className="input-group">
-            <label>Available Hearing Officer</label>
-            <div className="select-wrapper">
-              <select className="input-field">
-                <option>Select Officer Name</option>
-              </select>
-              <FaChevronDown className="select-icon" />
+              <label className="sub-label">Available Hearing Officer</label>
+              <div className="select-wrapper">
+                <select className="sched-input">
+                  <option>Select Officer Name</option>
+                  <option>APARECIO, Harold D.</option>
+                  <option>CALING, Mhardy Mae V.</option>
+                  <option>CANO, Paolo Miguel P.</option>
+                  <option>BUSANGILAN, Rommyl Rey C.</option>
+                  <option>CASIÑO, Roy S.</option>
+                  <option>TALON, Sittie Nashiba D.</option>
+                </select>
+                <FaChevronDown className="select-icon" />
+              </div>
             </div>
-          </div>
 
           <p className="event-summary">
-            Hearing Event: <strong>February 13, from 9:30 am - 10:30 am</strong>
+            Hearing Event: <strong>{monthName} 13, {year} from 9:30 am - 10:30 am</strong>
           </p>
 
           <button className="create-btn">Create Schedule</button>
@@ -92,7 +117,6 @@ const Schedule = () => {
 
         {/* RIGHT COLUMN: CALENDAR */}
         <div className="calendar-card">
-          {/* Availability Legend as requested */}
           <div className="legend-bar">
             <span><span className="dot available-dot"></span> Available</span>
             <span><span className="dot limited-dot"></span> Limited Slots</span>
@@ -101,17 +125,24 @@ const Schedule = () => {
 
           <div className="calendar-main-section">
             <div className="calendar-header">
-              <FaChevronLeft className="nav-arrow" />
-              <h3>February 2026</h3>
-              <FaChevronRight className="nav-arrow" />
+              <FaChevronLeft className="nav-arrow" onClick={handlePrevMonth} style={{cursor: 'pointer'}} />
+              <h3>{monthName} {year}</h3>
+              <FaChevronRight className="nav-arrow" onClick={handleNextMonth} style={{cursor: 'pointer'}} />
             </div>
 
             <div className="calendar-grid">
-              {['Monday', 'Tuesday', 'Wedsnesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(d => (
-                <div key={d} className="day-name">{d}</div>
+              {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(d => (
+                <div key={d} className="day-name">{d.substring(0, 3)}</div>
               ))}
-              {Array.from({ length: 28 }, (_, i) => i + 1).map(day => {
-                const isWeekend = (day % 7 === 6 || day % 7 === 0);
+              
+              {Array.from({ length: startingOffset }).map((_, i) => (
+                <div key={`empty-${i}`} className="day-num empty"></div>
+              ))}
+
+              {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(day => {
+                const dayOfWeek = (startingOffset + day - 1) % 7;
+                const isWeekend = dayOfWeek === 5 || dayOfWeek === 6;
+
                 return (
                   <div key={day} className={`day-num ${isWeekend ? 'weekend' : getDayStatus(day)}`}>
                     {day}
@@ -130,7 +161,13 @@ const Schedule = () => {
                   <div className="hearing-title">Hearing Review</div>
                   <div className="hearing-time"><FaClock /> 09:00 to 10:00 am <span><FaClock /> 30 min</span></div>
                 </div>
-                <button className="view-btn">View</button>
+                {/* --- CLICK HANDLER ADDED HERE --- */}
+                <button 
+                  className="view-btn" 
+                  onClick={() => setShowLog(true)}
+                >
+                  View
+                </button>
               </div>
             ))}
           </div>
