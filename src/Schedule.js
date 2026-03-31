@@ -1,207 +1,381 @@
 import React, { useState } from 'react';
 import './Schedule.css';
-import ActivityLog from './ActivityLog'; // Import the log component we created
-import { FaChevronLeft, FaChevronRight, FaClock, FaChevronDown } from 'react-icons/fa';
+import ActivityLog from './ActivityLog'; 
+import { 
+  FaChevronLeft, 
+  FaChevronRight, 
+  FaClock, 
+  FaArrowLeft, 
+  FaPlus, 
+  FaHistory, 
+  FaChevronDown, 
+  FaTimes, 
+  FaTrashAlt 
+} from 'react-icons/fa';
 
 const Schedule = () => {
-  // --- NEW STATE FOR NAVIGATION ---
   const [showLog, setShowLog] = useState(false);
-
-  // Setup state to track the currently viewed month/year
+  const [isCreating, setIsCreating] = useState(false);
+  const [showManageParty, setShowManageParty] = useState(false); 
   const [currentDate, setCurrentDate] = useState(new Date(2026, 1, 1));
+  
+  // --- FORM STATES ---
+  const [purpose, setPurpose] = useState('');
+  const [selectedDay, setSelectedDay] = useState('');
+  const [selectedMonth, setSelectedMonth] = useState('');
+  const [startTime, setStartTime] = useState('');
+  const [endTime, setEndTime] = useState('');
+  const [laborViolation, setLaborViolation] = useState('');
+  const [otherIssue, setOtherIssue] = useState('');
+  const [selectedOfficer, setSelectedOfficer] = useState('');
 
-  // Calendar Logic Calculations
+  const [requestingParties, setRequestingParties] = useState([{ id: Date.now(), name: '' }]);
+  const [respondingParties, setRespondingParties] = useState([{ id: Date.now() + 1, name: '' }]);
+
+  // --- MEETINGS DATA ---
+  const [meetings, setMeetings] = useState([
+    { 
+      id: 1, 
+      purpose: "Hearing Review", 
+      time: "9:00 AM to 10:30 AM", 
+      dateLabel: "MAR 2",
+      fullDate: "Tuesday, March 2"
+    }
+  ]);
+
+  const months = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
+
+  const daysArray = Array.from({ length: 31 }, (_, i) => i + 1);
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
-  const monthName = currentDate.toLocaleString('default', { month: 'long' });
+  const monthName = months[month];
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const firstDayIndex = new Date(year, month, 1).getDay();
   const startingOffset = firstDayIndex === 0 ? 6 : firstDayIndex - 1;
 
-  // Handlers for navigation arrows
-  const handlePrevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
-  const handleNextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
-
-  const getDayStatus = (day) => {
-    if ([5, 15, 17, 18, 23, 24].includes(day)) return "available";
-    if ([1, 12, 25].includes(day)) return "limited";
-    if ([2, 3, 10, 16, 19, 26].includes(day)) return "booked";
-    return "";
+  // --- FUNCTIONS ---
+  const handleDateClick = (day) => {
+    const clickedDate = new Date(year, month, day);
+    const dayOfWeek = clickedDate.getDay(); 
+    
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+      alert("Weekends (Saturday/Sunday) are not available for scheduling.");
+      return;
+    }
+    
+    setSelectedDay(day.toString());
+    setSelectedMonth(monthName.toUpperCase());
   };
 
-  // --- CONDITIONAL RENDERING ---
-  // If showLog is true, render the ActivityLog component instead
-  if (showLog) {
-    return <ActivityLog onBack={() => setShowLog(false)} />;
-  }
+  const handleCreateSchedule = () => {
+    // Basic Validation
+    if (!purpose || !selectedDay || !selectedMonth || !startTime || !endTime) {
+      alert("Please fill in the Purpose, Date, and Time.");
+      return;
+    }
+
+    const newMeeting = {
+      id: Date.now(),
+      purpose: purpose,
+      time: `${startTime} to ${endTime}`,
+      dateLabel: `${selectedMonth.substring(0, 3)} ${selectedDay}`,
+      requesting: requestingParties.map(p => p.name).filter(n => n !== ""),
+      responding: respondingParties.map(p => p.name).filter(n => n !== ""),
+    };
+
+    setMeetings([newMeeting, ...meetings]);
+    
+    // Reset Form and Go Back
+    setPurpose('');
+    setStartTime('');
+    setEndTime('');
+    setLaborViolation('');
+    setOtherIssue('');
+    setIsCreating(false);
+    alert("Schedule created successfully!");
+  };
+
+  const addParty = (type) => {
+    const newParty = { id: Date.now(), name: '' };
+    if (type === 'req') setRequestingParties([...requestingParties, newParty]);
+    else setRespondingParties([...respondingParties, newParty]);
+  };
+
+  const deleteParty = (type, id) => {
+    const list = type === 'req' ? requestingParties : respondingParties;
+    if (list.length > 1) {
+      if (type === 'req') setRequestingParties(list.filter(p => p.id !== id));
+      else setRespondingParties(list.filter(p => p.id !== id));
+    }
+  };
+
+  const handleInputChange = (type, id, value) => {
+    const update = (list) => list.map(p => p.id === id ? { ...p, name: value } : p);
+    if (type === 'req') setRequestingParties(update(requestingParties));
+    else setRespondingParties(update(respondingParties));
+  };
+
+  if (showLog) return <ActivityLog onBack={() => setShowLog(false)} />;
 
   return (
-    <div className="schedule-page-wrapper">
-      <div className="red-bg-accent"></div>
-
-      <div className="schedule-container">
-        {/* LEFT COLUMN: CREATE SCHEDULE */}
-        <div className="create-card">
-          <h2 className="section-title">Create New Schedule</h2>
-          
-          <div className="input-group">
-            <label>Purpose:</label>
-            <input type="text" className="sched-input" placeholder="Reason" />
-          </div>
-
-           <div className="row-group">
-            <div className="input-group">
-              <label>Requesting Party:</label>
-            <input type="text" className="sched-input-output" placeholder="Name" />
+    <div className="schedule-outer-container">
+      
+      {/* MANAGE PARTIES MODAL */}
+      {showManageParty && (
+        <div className="party-modal-overlay">
+          <div className="party-modal-card">
+            <div className="party-modal-header">
+              <h2>Manage Parties</h2>
+              <button className="close-x-btn" onClick={() => setShowManageParty(false)}>
+                <FaTimes />
+              </button>
             </div>
-            <div className="input-group">
-              <label>Responding Party:</label>
-            <input type="text" className="sched-input-output" placeholder="Name" />
-            </div>
-          </div>
+            <div className="party-modal-body">
+              <div className="party-section">
+                <label className="section-label">Requesting Party</label>
+                <div className="party-scroll-area">
+                  {requestingParties.map((party) => (
+                    <div key={party.id} className="party-input-row">
+                      <input 
+                        type="text" 
+                        placeholder="Insert name here" 
+                        className="dark-party-input"
+                        value={party.name}
+                        onChange={(e) => handleInputChange('req', party.id, e.target.value)}
+                      />
+                      <button className="party-delete-btn" onClick={() => deleteParty('req', party.id)}>
+                        <FaTrashAlt />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <button className="add-another-btn" onClick={() => addParty('req')}>
+                  <FaPlus size={10} /> Add Another
+                </button>
+              </div>
 
-          <div className="row-group">
-            <div className="input-group">
-              <label>Available day:</label>
-            <input type="text" className="sched-input-output" placeholder="Month|Day|Year" />
-            </div>
-            <div className="input-group">
-              <label>Available time:</label>
-              <div className="select-wrapper">
-                <select className="sched-input">
-                  <option>Select</option>
-                  <option>8:30 am to 9:00 am</option>
-                  <option>9:00 am to 9:30 am</option>
-                  <option>9:30 am to 10:00 am</option>
-                  <option>10:00 am to 10:30 am</option>
-                  <option>10:30 am to 11:00 am</option>
-                  <option>11:00 am to 11:30 am</option>
-                  <option>11:30 am to 12:00 pm</option>
-                  <option>1:00 pm to 1:30 pm</option>
-                  <option>1:30 pm to 2:00 pm</option>
-                  <option>2:00 pm to 2:30 pm</option>
-                  <option>2:30 pm to 3:00 pm</option>
-                  <option>3:00 pm to 3:30 pm</option>
-                  <option>3:30 pm to 4:00 pm</option>
-                  <option>4:00 pm to 4:30 pm</option>
-                  <option>4:30 pm to 5:00 pm</option>
-                </select>
-                <FaChevronDown className="select-icon" />
+              <div className="party-section">
+                <label className="section-label">Responding Party</label>
+                <div className="party-scroll-area">
+                  {respondingParties.map((party) => (
+                    <div key={party.id} className="party-input-row">
+                      <input 
+                        type="text" 
+                        placeholder="Insert name here" 
+                        className="dark-party-input"
+                        value={party.name}
+                        onChange={(e) => handleInputChange('res', party.id, e.target.value)}
+                      />
+                      <button className="party-delete-btn" onClick={() => deleteParty('res', party.id)}>
+                        <FaTrashAlt />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <button className="add-another-btn" onClick={() => addParty('res')}>
+                  <FaPlus size={10} /> Add Another
+                </button>
               </div>
             </div>
-          </div>
-
-          <label className="group-label">Claims/Issues</label>
-          <div className="row-group">
-            <div className="input-group">
-              <label className="sub-label">Labor Standards Violations</label>
-              <div className="select-wrapper">
-                <select className="sched-input">
-                  <option>Select</option>
-                  <option>Minimum Wage</option>
-                  <option>COLA</option>
-                  <option>Night Shift Differential</option>
-                  <option>Overtime Pay</option>
-                  <option>Holiday Pay</option>
-                  <option>13th Month Pay</option>
-                  <option>Service Charge</option>
-                  <option>Premium Pay for Rest Day</option>
-                  <option>Premium Pay for Special Day</option>
-                  <option>Service Incentive Leave</option>
-                  <option>Maternity Leave</option>
-                  <option>Paternity Leave</option>
-                  <option>Parental Leave for Solo Parent</option>
-                  <option>Leave for Victims of VAWC</option>
-                  <option>Special Leave for Women</option>
-                </select>
-                <FaChevronDown className="select-icon" />
-              </div>
-            </div>
-            <div className="input-group">
-              <label className="sub-label">Other Issues:</label>
-            <input type="text" className="sched-input-output" placeholder="Type here" />
+            <div className="party-modal-footer">
+              <button className="party-save-btn" onClick={() => setShowManageParty(false)}>Save Changes</button>
             </div>
           </div>
+        </div>
+      )}
 
-          <div className="input-group">
-              <label className="sub-label">Available Hearing Officer</label>
-              <div className="select-wrapper">
-                <select className="sched-input">
-                  <option>Select Officer Name</option>
-                  <option>APARECIO, Harold D.</option>
-                  <option>CALING, Mhardy Mae V.</option>
-                  <option>CANO, Paolo Miguel P.</option>
-                  <option>BUSANGILAN, Rommyl Rey C.</option>
-                  <option>CASIÑO, Roy S.</option>
-                  <option>TALON, Sittie Nashiba D.</option>
-                </select>
-                <FaChevronDown className="select-icon" />
+      {/* HEADER SECTION */}
+      <div className="schedule-header">
+        <div className="header-left">
+          <button className="back-circle-btn" onClick={() => setIsCreating(false)}>
+            <FaArrowLeft />
+          </button>
+          <div className="header-text">
+            <h1>Schedule a Meeting</h1>
+            {!isCreating && <p>Your daily agenda</p>}
+          </div>
+        </div>
+        {!isCreating && (
+          <button className="create-sched-btn" onClick={() => setIsCreating(true)}>
+            <FaPlus /> Create Schedule
+          </button>
+        )}
+      </div>
+
+      <div className="schedule-content-grid">
+        <div className="left-column-wrapper">
+          {!isCreating ? (
+            <div className="white-card meetings-card">
+              <h2 className="card-title">Upcoming Meetings</h2>
+              <div className="meetings-list">
+                {meetings.map((item) => (
+                  <div key={item.id} className="meeting-row">
+                    <span className="time-label">{item.time.split(' ')[0]} {item.time.split(' ')[1]}</span>
+                    <div className="meeting-blue-pill">
+                      <div className="date-tag">{item.dateLabel}</div>
+                      <div className="meeting-info">
+                        <h3>{item.purpose}</h3>
+                        <p><FaClock /> {item.time}</p>
+                      </div>
+                      <button className="view-pill-btn" onClick={() => setShowLog(true)}>View</button>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
+          ) : (
+            <div className="white-card create-form-container">
+              <h2 className="form-main-title">Create New Schedule</h2>
+              <div className="form-group">
+                <label>Purpose</label>
+                <input 
+                  type="text" 
+                  placeholder="Type here" 
+                  className="form-input-field" 
+                  value={purpose}
+                  onChange={(e) => setPurpose(e.target.value)}
+                />
+              </div>
 
-          <p className="event-summary">
-            Hearing Event: <strong>{monthName} 13, {year} from 9:30 am - 10:30 am</strong>
-          </p>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Requesting Party</label>
+                  <button className="manage-party-btn" onClick={() => setShowManageParty(true)}>Manage Party</button>
+                </div>
+                <div className="form-group">
+                  <label>Responding Party</label>
+                  <button className="manage-party-btn" onClick={() => setShowManageParty(true)}>Manage Party</button>
+                </div>
+              </div>
 
-          <button className="create-btn">Create Schedule</button>
+              <div className="form-row">
+                <div className="form-group flex-2">
+                  <label>Availability:</label>
+                  <div className="availability-pickers">
+                    <div className="custom-select-wrapper">
+                      <select value={selectedDay} onChange={(e) => setSelectedDay(e.target.value)}>
+                        <option value="">DAY</option>
+                        {daysArray.map(d => <option key={d} value={d}>{d}</option>)}
+                      </select>
+                      <FaChevronDown className="select-arrow" />
+                    </div>
+                    <div className="custom-select-wrapper">
+                      <select value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)}>
+                        <option value="">MONTH</option>
+                        {months.map(m => <option key={m} value={m.toUpperCase()}>{m}</option>)}
+                      </select>
+                      <FaChevronDown className="select-arrow" />
+                    </div>
+                  </div>
+                </div>
+                <div className="form-group flex-1">
+                  <label>TIME</label>
+                  <div className="time-range-picker">
+                    <div className="time-box">
+                        <FaClock /> 
+                        <input type="text" placeholder="00:00" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
+                    </div>
+                    <span>—</span>
+                    <div className="time-box">
+                        <FaClock /> 
+                        <input type="text" placeholder="00:00" value={endTime} onChange={(e) => setEndTime(e.target.value)} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <h3 className="section-subtitle">Claims/Issues</h3>
+              <div className="form-row">
+                <div className="form-group">
+                  <label className="faded-label">Labor Standards Violations</label>
+                  <input 
+                    type="text" 
+                    placeholder="Type here" 
+                    className="form-input-field" 
+                    value={laborViolation}
+                    onChange={(e) => setLaborViolation(e.target.value)}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="faded-label">Other Issues</label>
+                  <input 
+                    type="text" 
+                    placeholder="Type here" 
+                    className="form-input-field" 
+                    value={otherIssue}
+                    onChange={(e) => setOtherIssue(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>Available Hearing Officer</label>
+                <div className="custom-select-wrapper full-width">
+                  <select value={selectedOfficer} onChange={(e) => setSelectedOfficer(e.target.value)}>
+                    <option value="">Select Officer Name</option>
+                    <option value="Officer A">Officer A</option>
+                    <option value="Officer B">Officer B</option>
+                  </select>
+                  <FaChevronDown className="select-arrow" />
+                </div>
+              </div>
+
+              <div className="form-actions">
+                <button className="submit-create-btn" onClick={handleCreateSchedule}>Create</button>
+                <button className="alt-activity-log-btn" onClick={() => setShowLog(true)}>
+                  <FaHistory /> Activity Log
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* RIGHT COLUMN: CALENDAR */}
-        <div className="calendar-card">
-          <div className="legend-bar">
-            <span><span className="dot available-dot"></span> Available</span>
-            <span><span className="dot limited-dot"></span> Limited Slots</span>
-            <span><span className="dot booked-dot"></span> Fully Booked</span>
-          </div>
-
-          <div className="calendar-main-section">
-            <div className="calendar-header">
-              <FaChevronLeft className="nav-arrow" onClick={handlePrevMonth} style={{cursor: 'pointer'}} />
+        <div className="right-column">
+          <div className="white-card calendar-mini-card">
+            <div className="cal-nav">
+              <FaChevronLeft onClick={() => setCurrentDate(new Date(year, month - 1, 1))} />
               <h3>{monthName} {year}</h3>
-              <FaChevronRight className="nav-arrow" onClick={handleNextMonth} style={{cursor: 'pointer'}} />
+              <FaChevronRight onClick={() => setCurrentDate(new Date(year, month + 1, 1))} />
             </div>
-
-            <div className="calendar-grid">
-              {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(d => (
-                <div key={d} className="day-name">{d.substring(0, 3)}</div>
-              ))}
-              
-              {Array.from({ length: startingOffset }).map((_, i) => (
-                <div key={`empty-${i}`} className="day-num empty"></div>
-              ))}
-
+            <div className="cal-days-header">
+              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(d => <span key={d}>{d}</span>)}
+            </div>
+            <div className="cal-grid-mini">
+              {Array.from({ length: startingOffset }).map((_, i) => <div key={i} />)}
               {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(day => {
-                const dayOfWeek = (startingOffset + day - 1) % 7;
-                const isWeekend = dayOfWeek === 5 || dayOfWeek === 6;
-
+                const isSelected = selectedDay === day.toString() && selectedMonth === monthName.toUpperCase();
                 return (
-                  <div key={day} className={`day-num ${isWeekend ? 'weekend' : getDayStatus(day)}`}>
+                  <div 
+                    key={day} 
+                    className={`cal-date ${isSelected ? 'active' : ''}`}
+                    onClick={() => handleDateClick(day)}
+                    style={{ cursor: 'pointer' }}
+                  >
                     {day}
                   </div>
                 );
               })}
             </div>
           </div>
-
-          <div className="recent-section">
-            <h4>Recent Hearings</h4>
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="hearing-item">
-                <div className="hearing-date-box">Tuesday<br/><span>10</span></div>
-                <div className="hearing-info">
-                  <div className="hearing-title">Hearing Review</div>
-                  <div className="hearing-time"><FaClock /> 09:00 to 10:00 am <span><FaClock /> 30 min</span></div>
+          
+          {isCreating && (
+            <div className="recent-hearings-section">
+              <h3 className="recent-title">Recent Hearings</h3>
+              {meetings.slice(0, 2).map((item) => (
+                <div key={item.id} className="white-card mini-hearing-pill">
+                  <div className="pill-date">Tuesday<br/><b>{item.dateLabel.split(' ')[1]}</b></div>
+                  <div className="pill-info">
+                    <h4>{item.purpose}</h4>
+                    <p><FaClock /> {item.time} <span className="green-text">Active</span></p>
+                  </div>
+                  <button className="view-btn-sm" onClick={() => setShowLog(true)}>View</button>
                 </div>
-                {/* --- CLICK HANDLER ADDED HERE --- */}
-                <button 
-                  className="view-btn" 
-                  onClick={() => setShowLog(true)}
-                >
-                  View
-                </button>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
