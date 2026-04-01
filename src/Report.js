@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom"; 
 import "./Report.css";
 
 const reportData = [
@@ -14,28 +15,59 @@ const reportData = [
 ];
 
 const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const reports = ["All", "Settle", "Unsettle"];
 
 const Report = () => {
+  const navigate = useNavigate();
+
+  const handleReportChange = (event) => {
+    const selectedValue = event.target.value;
+
+    if (selectedValue === "Settle") {
+      navigate("/report-settle");
+    } else if (selectedValue === "Unsettle") {
+      navigate("/report-unsettle");
+    } else if (selectedValue === "All") {
+      navigate("/report");
+    }
+  };
+
   return (
     <div className="report-container">
       <div className="report-header">
         <h1 className="report-title">Monthly Office Report</h1>
-        
-        {/* RIGHT SIDE CONTROLS */}
+
         <div className="header-right-controls">
           <button className="download-btn">
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M12 15V3m0 12l-4-4m4 4l4-4M2 17l.621 2.485A2 2 0 004.561 21H19.439a2 2 0 001.94-1.515L22 17" stroke="black" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-  Download All Reports
-</button>
-          
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 15V3m0 12l-4-4m4 4l4-4M2 17l.621 2.485A2 2 0 004.561 21H19.439a2 2 0 001.94-1.515L22 17" stroke="black" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            Download All Reports
+          </button>
+
+          <div className="selectors-row">
           <div className="month-selector">
             <label>Select Month: </label>
             <select className="month-dropdown">
-              <option>Select</option>
+              <option value="">Select</option>
               {months.map((m) => <option key={m} value={m}>{m}</option>)}
             </select>
+          </div>
+
+          <div className="report-selector">
+            <label>Select Report: </label>
+            <select 
+              className="report-dropdown" 
+              onChange={handleReportChange} 
+              value="All"
+            >
+              {reports.map((r) => (
+                <option key={r} value={r}>
+                  {r}
+                </option>
+              ))}
+            </select>
+          </div>
           </div>
         </div>
       </div>
@@ -45,11 +77,11 @@ const Report = () => {
           {reportData.map((officer, index) => (
             <div key={index} className="bar-group">
               <div className="bar-value">{officer.value}</div>
-              <div 
-                className="bar" 
-                style={{ 
-                  height: `${officer.value * 20}px`, 
-                  backgroundColor: officer.color 
+              <div
+                className="bar"
+                style={{
+                  height: `${officer.value * 20}px`,
+                  backgroundColor: officer.color
                 }}
               ></div>
               <div className="officer-avatar-wrapper">
