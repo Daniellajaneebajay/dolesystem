@@ -1,16 +1,18 @@
 import React, { useState } from "react"; 
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import App from "./App";
-import UserManagement from "./UserManagement";
-import Sidebar from "./Sidebar";
-import Schedule from "./Schedule";
-import Report from "./Report"; 
-import Settings from "./Settings";
-import EditProfile from "./EditProfile";
 import Login from "./Login";
 import ForgotPassword from "./ForgotPassword"; 
 import ResetPassword from "./ResetPassword"; 
+import App from "./App";
+import Schedule from "./Schedule";
+import UserManagement from "./UserManagement";
+import Sidebar from "./Sidebar";
+import Report from "./Report"; 
+import ReportSettle from "./ReportSettle";
+import ReportUnsettle from "./ReportUnsettle";
+import Settings from "./Settings";
+import EditProfile from "./EditProfile";
 
 const RootComponent = () => {
   // Authentication state
@@ -54,6 +56,9 @@ const RootComponent = () => {
               <Route path="/user-management" element={<UserManagement />} />
               <Route path="/schedule" element={<Schedule />} />
               <Route path="/report" element={<Report />} />
+              <Route path="/reportsettle" element={<ReportSettle />} />
+              <Route path="/reportunsettle" element={<ReportUnsettle />} />
+
               <Route path="/settings" element={<Settings />} />
               <Route 
                 path="/edit-profile" 
