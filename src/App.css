@@ -8,14 +8,30 @@ body {
   display: flex;
 }
 
-/* Main Content */
-.main-content { padding: 20px; width: 97%; }
-.header-row { display: flex; justify-content: space-between; align-items: center; }
-.main-title { font-size: 32px; font-weight: 800; }
-.red-text { color: #cc0000; }
-.blue-text { color: #d8ca09; }
+.main-content { 
+  padding: 20px; 
+  width: 97%; 
+}
 
-/* The Dark Blue Container */
+.header-row { 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+}
+
+.main-title { 
+  font-size: 32px; 
+  font-weight: 800; 
+}
+
+.red-text { 
+  color: #cc0000; 
+}
+
+.blue-text { 
+  color: #d8ca09; 
+}
+
 .blue-grid-container {
   background: #030a49;
   padding: 20px;
@@ -24,7 +40,6 @@ body {
   box-sizing: border-box; 
 }
 
-/* 3 Columns Grid */
 .officer-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr); 
@@ -32,22 +47,50 @@ body {
   width: 100%;
 }
 
-/* Card Styling */
 .officer-card {
   background: #d9d9d9;
   border-radius: 12px;
   padding: 15px;
 }
 
-.card-top { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-.avatar-wrapper { width: 55px; height: 55px; border-radius: 50%; border: 3px solid; overflow: hidden; }
-.avatar-wrapper img { width: 100%; }
-.name-details h4 { font-size: 15px; color: #062553; margin: 0; }
-.name-details p { font-size: 14px; margin: 0; color: #000000; }
-.rfa-count { margin-left: auto; font-weight: bold; font-size: 12px; padding-top: 40px; }
+.card-top { 
+  display: flex; 
+  align-items: center; 
+  gap: 10px; 
+  margin-bottom: 10px; 
+}
 
+.avatar-wrapper { 
+  width: 55px; 
+  height: 55px; 
+  border-radius: 50%; 
+  border: 3px solid; 
+  overflow: hidden; 
+}
 
-/* Header Actions (Filter & Button) */
+.avatar-wrapper img { 
+  width: 100%; 
+}
+
+.name-details h4 { 
+  font-size: 15px; 
+  color: #062553; 
+  margin: 0; 
+}
+
+.name-details p { 
+  font-size: 14px; 
+  margin: 0; 
+  color: #000000; 
+}
+
+.rfa-count { 
+  margin-left: auto; 
+  font-weight: bold; 
+  font-size: 12px; 
+  padding-top: 40px; 
+}
+
 .header-actions {
   display: flex;
   align-items: center;
@@ -77,28 +120,78 @@ body {
   cursor: pointer;
 }
 
-.status-text { font-size: 11px; display: flex; align-items: center; gap: 5px; text-decoration: underline; }
-.dot { width: 8px; height: 8px; border-radius: 50%; }
+.status-text { 
+  font-size: 11px; 
+  display: flex; 
+  align-items: center; 
+  gap: 5px; 
+  text-decoration: underline; 
+}
 
-.status-selector-row { font-size: 11px; margin-bottom: 10px; }
-.mini-select { border-radius: 4px; padding: 2px; }
+.dot { 
+  width: 8px; 
+  height: 8px; 
+  border-radius: 50%; 
+}
 
-/* Inner Table */
-.inner-table { width: 100%; background: white; border-radius: 10px; border-collapse: collapse; font-size: 9px; overflow: hidden; }
-.inner-table th { background: #eee; padding: 5px; }
-.inner-table td { padding: 5px; text-align: center; border-bottom: 1px solid #ddd; }
+.status-selector-row { 
+  font-size: 11px; 
+  margin-bottom: 10px; 
+}
 
-.red-t { color: #cc0000; }
-.green-t { color: #0db334; }
+.mini-select { 
+  border-radius: 4px; 
+  padding: 2px; 
+}
 
+.inner-table { 
+  width: 100%; 
+  background: white; 
+  border-radius: 10px; 
+  border-collapse: collapse; 
+  font-size: 9px; 
+  overflow: hidden; 
+}
 
-/* Pagination */
-.pagination-dots { text-align: center; margin-top: 20px; }
-.pagination-dots .dot { height: 8px; width: 8px; background-color: #bbb; display: inline-block; margin: 0 5px; }
-.pagination-dots .dot.active { background-color: white; width: 20px; border-radius: 10px; }
+.inner-table th { 
+  background: #eee; 
+  padding: 5px; 
+}
 
+.inner-table td { 
+  padding: 5px; 
+  text-align: center; 
+  border-bottom: 1px solid #ddd; 
+}
 
-/* Ensure the status dot is a perfect circle */
+.red-t { 
+  color: #cc0000; 
+}
+
+.green-t { 
+  color: #0db334; 
+}
+
+.pagination-dots { 
+  text-align: 
+  center; 
+  margin-top: 20px; 
+}
+
+.pagination-dots .dot { 
+  height: 8px; 
+  width: 8px; 
+  background-color: #bbb; 
+  display: inline-block; 
+  margin: 0 5px; 
+}
+
+.pagination-dots .dot.active { 
+  background-color: white; 
+  width: 20px; 
+  border-radius: 10px; 
+}
+
 .status-dot {
   width: 10px;
   height: 10px;
@@ -110,11 +203,10 @@ body {
   font-size: 12px;
   display: flex;
   align-items: center;
-  gap: 6px; /* Gap between dot and text */
+  gap: 6px; 
   margin-top: 2px;
 }
 
-/* Style for the mini dropdown */
 .mini-select {
   border-radius: 4px;
   padding: 2px 5px;
@@ -129,7 +221,6 @@ body {
   border-color: #030a49;
 }
 
-/* Ensure avatar wrapper shows the status color clearly */
 .avatar-wrapper {
   width: 55px;
   height: 55px;
@@ -146,7 +237,6 @@ html, body {
   overflow-x: hidden; 
 }
 
-/* If you are using a main layout wrapper and modal */
 .app-container {
   display: flex;
   width: 100%;
@@ -224,7 +314,6 @@ html, body {
   margin-left: 2px;
 }
 
-/* The light gray pill box */
 .modal-field {
   background-color: #efefef; 
   padding: 12px 15px;
@@ -244,9 +333,6 @@ html, body {
   line-height: 1;
 }
 
-
-/* NEW SCROLLABLE TABLE STYLES */
-
 .inner-table-wrapper {
   max-height: 110px;    
   overflow-y: auto;     
@@ -256,7 +342,6 @@ html, body {
   border: 1px solid #ddd;
 }
 
-/* Ensure the inner-table doesn't have overflow hidden so sticky works */
 .inner-table {
   width: 100%;
   background: white;
@@ -265,8 +350,6 @@ html, body {
   overflow: visible; 
 }
 
-
-/* Optional: Make the table header stay at the top when scrolling */
 .inner-table thead th {
   position: sticky;
   top: 0;
@@ -274,20 +357,125 @@ html, body {
   z-index: 10;
 }
 
-/* Optional: Custom scrollbar styling to make it look cleaner */
 .inner-table-wrapper::-webkit-scrollbar {
   width: 6px;
 }
+
 .inner-table-wrapper::-webkit-scrollbar-track {
   background: #f1f1f1;
   border-radius: 10px;
 }
+
 .inner-table-wrapper::-webkit-scrollbar-thumb {
   background: #ccc;
   border-radius: 10px;
 }
+
 .inner-table-wrapper::-webkit-scrollbar-thumb:hover {
   background: #888;
 }
 
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.7); 
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000; 
+}
 
+.details-modal {
+  background: white;
+  padding: 25px 35px;
+  border-radius: 20px;
+  width: 450px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.modal-title {
+  font-size: 22px;
+  font-weight: bold;
+  color: #000;
+  margin: 0;
+}
+
+.hearing-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  min-height: 32px; 
+}
+
+.hearing-count-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #000;
+  margin: 0;
+}
+
+.recent-filter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+}
+
+.modal-mini-select {
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1.5px solid #030a49;
+  background: white;
+  font-size: 13px;
+  cursor: pointer;
+  outline: none;
+}
+
+.modal-body-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px; 
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.detail-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 4px;
+  padding-left: 2px;
+}
+
+.modal-field {
+  background-color: #efefef; 
+  padding: 12px 15px;
+  border-radius: 12px; 
+  color: #666; 
+  font-size: 14px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 28px;
+  cursor: pointer;
+  color: #000;
+  line-height: 1;
+}
