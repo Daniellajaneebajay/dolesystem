@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import "./Dashboard.css";
+import "./App.css";
 import { useNavigate } from "react-router-dom";
 
 const officers = [
