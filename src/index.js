@@ -5,7 +5,7 @@ import App from "./App";
 import UserManagement from "./UserManagement";
 import Sidebar from "./Sidebar";
 import Schedule from "./Schedule";
-import Minutes from "./Minutes"; // Added Import
+import Minutes from "./Minutes"; 
 import Report from "./Report"; 
 import Settings from "./Settings";
 import EditProfile from "./EditProfile";
@@ -48,7 +48,7 @@ const RootComponent = () => {
               <Route path="/" element={<App />} />
               <Route path="/user-management" element={<UserManagement />} />
               <Route path="/schedule" element={<Schedule />} />
-              <Route path="/minutes" element={<Minutes />} /> {/* Added Route */}
+              <Route path="/minutes" element={<Minutes />} /> 
               <Route path="/report" element={<Report />} />
               <Route path="/settings" element={<Settings />} />
               <Route 
