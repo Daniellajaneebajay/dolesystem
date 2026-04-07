@@ -19,8 +19,8 @@ const RootComponent = () => {
   
   // User profile state
   const [userData, setUserData] = useState({
-    name: "Nancy Wheeler",
-    email: "nancy.wheeler@gmail.com",
+    name: "Admin",
+    email: "dolecdofo@gmail.com",
     image: "/assets/unknown.jpg"
   });
 
