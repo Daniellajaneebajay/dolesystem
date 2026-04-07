@@ -10,6 +10,7 @@ const Sidebar = ({ user, onLogout }) => { // Props received here
   const navItems = [
     { name: "Dashboard", path: "/" },
     { name: "Schedule", path: "/schedule" },
+    { name: "Minutes", path: "/minutes" },
     { name: "Report", path: "/report" },
     { name: "Settings", path: "/settings" },
     { name: "Logout", path: "/logout" },
