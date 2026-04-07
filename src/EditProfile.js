@@ -1,17 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import "./EditProfile.css";
 import { FaCloudUploadAlt, FaEye, FaEyeSlash } from "react-icons/fa";
 
-const EditProfile = () => {
-  // --- STATE FOR PROFILE ---
-  const [user, setUser] = useState({
-    name: "Nancy Wheeler",
-    email: "nancy.wheeler@gmail.com",
-    image: "/assets/unknown.jpg", 
-  });
-
+const EditProfile = ({ user, setUser }) => {
   // --- LOCAL FORM STATE ---
-  // Splitting name into first and last for the inputs
   const [formData, setFormData] = useState({
     firstName: user.name.split(" ")[0] || "",
     lastName: user.name.split(" ")[1] || "",
@@ -29,6 +21,9 @@ const EditProfile = () => {
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
+  // Create a reference to the hidden file input
+  const fileInputRef = useRef(null);
+
   // --- HANDLERS ---
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -40,16 +35,38 @@ const EditProfile = () => {
     setPasswords((prev) => ({ ...prev, [name]: value }));
   };
 
+  // 1. Logic to handle the file selection
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 800000) {
+        alert("File is too large! Please upload an image under 800kb.");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        // Update local preview
+        setFormData((prev) => ({ ...prev, image: reader.result }));
+      };
+      reader.readAsDataURL(file); // Converts image to a string
+    }
+  };
+
+  // 2. Trigger the hidden input when clicking the upload box
+  const triggerFileInput = () => {
+    fileInputRef.current.click();
+  };
+
   const handleSavePersonal = () => {
-    // Combine first and last name back into one string for the user object
     const updatedUser = {
-      ...user,
       name: `${formData.firstName} ${formData.lastName}`.trim(),
       email: formData.email,
       image: formData.image
     };
+    // Update the GLOBAL state in index.js
     setUser(updatedUser);
-    alert("Personal Information Updated!");
+    alert("Profile Updated Successfully!");
   };
 
   const handleSavePassword = () => {
@@ -77,23 +94,34 @@ const EditProfile = () => {
 
         <div className="inner-card photo-flex">
           <div className="avatar-large">
-            <img src={formData.image} alt="Profile Large" />
+            <img src={formData.image} alt="Profile Preview" />
           </div>
-          <div className="upload-box">
+
+          {/* Hidden File Input */}
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            onChange={handleImageChange} 
+            accept="image/*" 
+            style={{ display: "none" }} 
+          />
+
+          <div className="upload-box" onClick={triggerFileInput} style={{ cursor: "pointer" }}>
             <FaCloudUploadAlt className="upload-icon-svg" />
-            <p>Click or drag to upload a new photo</p>
+            <p>Click to upload a new photo</p>
             <span style={{ fontSize: "10px", color: "#9ca3af" }}>
               JPG, PNG or GIF (Max 800kb)
             </span>
           </div>
+
           <div className="card-actions-fixed">
-            <button className="btn-text cancel">Cancel</button>
+            <button className="btn-text cancel" onClick={() => setFormData({...formData, image: user.image})}>Reset</button>
             <button className="btn-text save" onClick={handleSavePersonal}>Save</button>
           </div>
         </div>
       </div>
 
-      {/* --- Section 2: Personal Details Form (Position Removed) --- */}
+      {/* --- Section 2: Personal Details Form --- */}
       <div className="outer-card">
         <div className="card-intro">
           <h2>Personal Information</h2>
@@ -109,7 +137,6 @@ const EditProfile = () => {
                 name="firstName"
                 value={formData.firstName}
                 onChange={handleInputChange}
-                placeholder="Nancy"
               />
             </div>
             <div className="form-group">
@@ -119,7 +146,6 @@ const EditProfile = () => {
                 name="lastName"
                 value={formData.lastName}
                 onChange={handleInputChange}
-                placeholder="Wheeler"
               />
             </div>
           </div>
@@ -131,14 +157,12 @@ const EditProfile = () => {
               name="email"
               value={formData.email}
               onChange={handleInputChange}
-              placeholder="nancy.wheeler@gmail.com"
             />
           </div>
 
           <div className="card-actions">
-            <button className="btn-text cancel">Cancel</button>
             <button className="btn-text save" onClick={handleSavePersonal}>
-              Save
+              Save Details
             </button>
           </div>
         </div>
@@ -160,7 +184,6 @@ const EditProfile = () => {
                 name="current"
                 value={passwords.current}
                 onChange={handlePasswordChange}
-                placeholder="Current Password"
               />
               <div className="icon-trigger" onClick={() => setShowCurrent(!showCurrent)}>
                 {showCurrent ? <FaEyeSlash /> : <FaEye />}
@@ -176,7 +199,6 @@ const EditProfile = () => {
                 name="new"
                 value={passwords.new}
                 onChange={handlePasswordChange}
-                placeholder="*********************"
               />
               <div className="icon-trigger" onClick={() => setShowNew(!showNew)}>
                 {showNew ? <FaEyeSlash /> : <FaEye />}
@@ -192,7 +214,6 @@ const EditProfile = () => {
                 name="confirm"
                 value={passwords.confirm}
                 onChange={handlePasswordChange}
-                placeholder="*********************"
               />
               <div className="icon-trigger" onClick={() => setShowConfirm(!showConfirm)}>
                 {showConfirm ? <FaEyeSlash /> : <FaEye />}
@@ -201,9 +222,8 @@ const EditProfile = () => {
           </div>
 
           <div className="card-actions">
-            <button className="btn-text cancel">Cancel</button>
             <button className="btn-text save" onClick={handleSavePassword}>
-              Save
+              Save Password
             </button>
           </div>
         </div>
