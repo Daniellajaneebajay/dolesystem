@@ -24,9 +24,9 @@ const ReportSettle = () => {
     const selectedValue = event.target.value;
 
     if (selectedValue === "Settle") {
-      navigate("/report-settle"); 
+      navigate("/reportsettle"); 
     } else if (selectedValue === "Unsettle") {
-      navigate("/report-unsettle");
+      navigate("/reportunsettle");
     } else if (selectedValue === "All") {
       navigate("/report");
     }
