@@ -13,6 +13,7 @@ import ReportSettle from "./ReportSettle";
 import ReportUnsettle from "./ReportUnsettle";
 import Settings from "./Settings";
 import EditProfile from "./EditProfile";
+import Minutes from "./Minutes";
 
 const RootComponent = () => {
   // Authentication state
@@ -58,7 +59,7 @@ const RootComponent = () => {
               <Route path="/report" element={<Report />} />
               <Route path="/reportsettle" element={<ReportSettle />} />
               <Route path="/reportunsettle" element={<ReportUnsettle />} />
-
+              <Route path="/minutes" element={<Minutes />} />
               <Route path="/settings" element={<Settings />} />
               <Route 
                 path="/edit-profile" 
