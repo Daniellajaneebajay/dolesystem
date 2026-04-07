@@ -7,6 +7,8 @@ import Sidebar from "./Sidebar";
 import Schedule from "./Schedule";
 import Minutes from "./Minutes"; 
 import Report from "./Report"; 
+import ReportSettle from "./ReportSettle"; 
+import ReportUnsettle from "./ReportUnsettle"; 
 import Settings from "./Settings";
 import EditProfile from "./EditProfile";
 import Login from "./Login";
@@ -50,6 +52,8 @@ const RootComponent = () => {
               <Route path="/schedule" element={<Schedule />} />
               <Route path="/minutes" element={<Minutes />} /> 
               <Route path="/report" element={<Report />} />
+              <Route path="/reportsettle" element={<ReportSettle />} />
+              <Route path="/reportunsettle" element={<ReportUnsettle />} />
               <Route path="/settings" element={<Settings />} />
               <Route 
                 path="/edit-profile" 
