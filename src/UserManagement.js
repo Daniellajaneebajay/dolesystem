@@ -145,13 +145,13 @@ function UserManagement() {
 
       {/* ADD NEW USER MODAL FORM - SYNTAX FIXED HERE */}
       {showModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <div className="modal-header">
+        <div className="user-modal-overlay">
+          <div className="user-modal-content">
+            <div className="user-modal-header">
               <h3>Add New User</h3>
               <FaTimes className="close-icon" onClick={() => setShowModal(false)} />
             </div>
-            <div className="modal-body">
+            <div className="user-modal-body">
               <div className="input-group">
                 <label>Name</label>
                 <input type="text" placeholder="Enter Fullname" />
@@ -177,7 +177,7 @@ function UserManagement() {
                 <input type="password" placeholder="Enter Password" />
               </div>
             </div>
-            <div className="modal-footer">
+            <div className="user-modal-footer">
               <button className="confirm-btn" onClick={() => setShowModal(false)}>
                 Confirm
               </button>
