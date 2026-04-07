@@ -64,23 +64,23 @@ const Minutes = () => {
     <div className="minutes-page">
       {/* File Upload Modal Overlay */}
       {showModal && (
-        <div className="modal-overlay">
+        <div className="minutes-modal-overlay">
           <div className="upload-modal">
-            <div className="modal-header">
-              <FaFileUpload className="modal-upload-icon" />
+            <div className="minutes-modal-header">
+              <FaFileUpload className="minutes-modal-upload-icon" />
               <span>File Upload</span>
             </div>
             <input 
               type="text" 
-              className="modal-input" 
+              className="minutes-modal-input" 
               placeholder="Untitled File"
               value={newFileName}
               onChange={(e) => setNewFileName(e.target.value)}
               autoFocus
             />
-            <div className="modal-actions">
-              <button className="modal-btn-cancel" onClick={() => setShowModal(false)}>Cancel</button>
-              <button className="modal-btn-create" onClick={handleCreateFile}>Create</button>
+            <div className="minutes-modal-actions">
+              <button className="minutes-modal-btn-cancel" onClick={() => setShowModal(false)}>Cancel</button>
+              <button className="minutes-modal-btn-create" onClick={handleCreateFile}>Create</button>
             </div>
           </div>
         </div>
