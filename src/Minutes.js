@@ -51,18 +51,19 @@ const Minutes = () => {
       time: "Uploaded now",
       selected: false
     };
-    setDocuments([newFile, ...documents]); // Adds new folder to the container
+    setDocuments([newFile, ...documents]); 
     setNewFileName("");
     setShowModal(false);
   };
 
   const deleteSingleFile = (id) => {
-    setDocuments(documents.filter(doc => doc.id !== id));
+    if (window.confirm("Are you sure you want to delete this file?")) {
+      setDocuments(documents.filter(doc => doc.id !== id));
+    }
   };
 
   return (
     <div className="minutes-page">
-      {/* File Upload Modal Overlay */}
       {showModal && (
         <div className="minutes-modal-overlay">
           <div className="upload-modal">
@@ -118,7 +119,6 @@ const Minutes = () => {
         </select>
       </div>
 
-      {/* Dark Blue Grid Container */}
       <div className="grid-container">
         <div className="doc-grid">
           {documents.map((doc, index) => (
@@ -141,6 +141,13 @@ const Minutes = () => {
                 <div className="dropdown-menu">
                   <button onClick={() => alert("Editing " + doc.id)}>Edit</button>
                   <button onClick={() => alert("Archiving " + doc.id)}>Archive</button>
+                  <button 
+                    className="menu-delete-btn" 
+                    onClick={() => deleteSingleFile(doc.id)}
+                    style={{ color: '#ff4d4d' }}
+                  >
+                    Delete
+                  </button>
                 </div>
               </div>
             </div>
