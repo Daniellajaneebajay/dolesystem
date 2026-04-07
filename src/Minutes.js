@@ -19,7 +19,6 @@ const Minutes = () => {
     }))
   );
 
-  // States for the File Upload Modal
   const [showModal, setShowModal] = useState(false);
   const [newFileName, setNewFileName] = useState("");
 
@@ -64,6 +63,7 @@ const Minutes = () => {
 
   return (
     <div className="minutes-page">
+      {/* File Upload Modal Overlay */}
       {showModal && (
         <div className="minutes-modal-overlay">
           <div className="upload-modal">
@@ -95,8 +95,8 @@ const Minutes = () => {
 
       {/* Action Bar */}
       <div className="action-bar">
-        <div className="search-container">
-          <FaSearch className="search-icon" />
+        <div className="minutes-search-container">
+          <FaSearch className="minutes-search-icon" />
           <input type="text" placeholder="Search" />
         </div>
         <div className="button-group">
@@ -119,6 +119,7 @@ const Minutes = () => {
         </select>
       </div>
 
+      {/* Grid Container */}
       <div className="grid-container">
         <div className="doc-grid">
           {documents.map((doc, index) => (
@@ -141,6 +142,7 @@ const Minutes = () => {
                 <div className="dropdown-menu">
                   <button onClick={() => alert("Editing " + doc.id)}>Edit</button>
                   <button onClick={() => alert("Archiving " + doc.id)}>Archive</button>
+                  {/* Using the function here to clear the ESLint warning */}
                   <button 
                     className="menu-delete-btn" 
                     onClick={() => deleteSingleFile(doc.id)}
