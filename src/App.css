@@ -283,8 +283,10 @@ html, body {
 
 .modal-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: center;
+  gap: 240px;
+  font-weight: 800;
   margin-bottom: 20px;
 }
 
