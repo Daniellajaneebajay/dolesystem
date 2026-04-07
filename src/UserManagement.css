@@ -228,7 +228,7 @@
 
 
 /* Modal */
-.modal-overlay {
+.user-modal-overlay {
     position: fixed;
     top: 0; left: 0; 
     width: 100vw; 
@@ -240,7 +240,7 @@
     z-index: 2000;
 }
 
-.modal-content {
+.user-modal-content {
     background: white;
     width: 450px;
     border-radius: 20px; 
@@ -249,14 +249,14 @@
     position: relative;
 }
 
-.modal-header {
+.user-modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
 }
 
-.modal-header h3 {
+.user-modal-header h3 {
     margin: 0;
     font-size: 1.25rem;
     font-weight: 700;
@@ -310,7 +310,7 @@
     background: #fff;
 }
 
-.modal-footer {
+.user-modal-footer {
     display: flex;
     justify-content: flex-end;
     margin-top: 10px;
