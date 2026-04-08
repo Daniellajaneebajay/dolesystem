@@ -130,12 +130,8 @@
     letter-spacing: 0.8px;
 }
 
-input[type="text"], 
-input[type="date"], 
-input[type="time"], 
-input[type="number"],
-textarea, 
-select {
+/* RENAMED TO PREVENT CLASHING WITH SCHEDULE.CSS */
+.min-input-field {
     border: 1.5px solid #e2e8f0;
     border-radius: 12px;
     padding: 14px;
@@ -145,6 +141,20 @@ select {
     color: #1e293b;
     transition: all 0.3s ease;
     box-sizing: border-box;
+    outline: none;
+    font-family: 'Inter', sans-serif;
+}
+
+.min-input-field:focus {
+    border-color: #03113d; /* Matches the DOLE dark blue theme */
+    background: white;
+    box-shadow: 0 0 0 4px rgba(3, 17, 61, 0.05);
+}
+
+/* Specific styling for the textarea in MinutesInfo */
+textarea.min-input-field {
+    min-height: 120px;
+    resize: vertical;
 }
 
 input:focus, textarea:focus, select:focus {
@@ -481,6 +491,8 @@ button.btn-back-edit {
 .min-info-container textarea[readonly] {
     cursor: default;
     background: #f8fafc;
+    padding: 16px;
+    border-radius: 14px;
 }
 
 .min-info-container textarea[readonly] {
