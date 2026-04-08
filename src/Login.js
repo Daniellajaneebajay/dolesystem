@@ -77,7 +77,7 @@ const Login = ({ onLogin }) => {
             <div className="role-selector">
               <label>Sign In As</label>
               <select 
-                className="custom-select" 
+                className="log-custom-select" 
                 value={role} 
                 onChange={(e) => setRole(e.target.value)} 
                 required
