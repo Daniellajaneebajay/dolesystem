@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './Schedule.css';
-import ActivityLog from './ActivityLog'; 
+import ActivityLog from './ActivityLog';
 import { 
   FaChevronLeft, 
   FaChevronRight, 
@@ -10,196 +11,147 @@ import {
   FaHistory, 
   FaChevronDown, 
   FaTimes, 
-  FaTrashAlt 
+  FaTrash 
 } from 'react-icons/fa';
+import { toast, ToastContainer } from 'react-toastify';
+
+const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+// Full list from your provided reference image
+const laborStandardsOptions = [
+  "Minimum Wage", "COLA", "Night Shift Differential", "Overtime Pay", 
+  "Holiday Pay", "13th Month Pay", "Service Charge", "Premium Pay for Rest Day",
+  "Premium Day for Special Day", "Service Incentive Leave", "Maternity Leave",
+  "Paternity Leave", "Parental Leave for Solo Parent", "Leave for Victims of VAWC",
+  "Special Leave for Women"
+];
 
 const Schedule = () => {
+  const navigate = useNavigate();
+  
+  // UI Logic States
   const [showLog, setShowLog] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
-  const [showManageParty, setShowManageParty] = useState(false); 
-  const [currentDate, setCurrentDate] = useState(new Date(2026, 1, 1));
-  
-  // --- FORM STATES ---
-  const [purpose, setPurpose] = useState('');
-  const [selectedDay, setSelectedDay] = useState('');
-  const [selectedMonth, setSelectedMonth] = useState('');
-  const [startTime, setStartTime] = useState('');
-  const [endTime, setEndTime] = useState('');
-  const [laborViolation, setLaborViolation] = useState('');
-  const [otherIssue, setOtherIssue] = useState('');
-  const [selectedOfficer, setSelectedOfficer] = useState('');
+  const [showPartyModal, setShowPartyModal] = useState(false);
+  const [modalType, setModalType] = useState(''); 
 
-  const [requestingParties, setRequestingParties] = useState([{ id: Date.now(), name: '' }]);
-  const [respondingParties, setRespondingParties] = useState([{ id: Date.now() + 1, name: '' }]);
+  // --- CALENDAR NAVIGATION STATE ---
+  const [viewDate, setViewDate] = useState(new Date(2026, 1, 1)); 
 
-  // --- MEETINGS DATA ---
+  const changeMonth = (offset) => {
+    const newDate = new Date(viewDate.getFullYear(), viewDate.getMonth() + offset, 1);
+    setViewDate(newDate);
+  };
+
+  const daysInMonth = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate();
+  const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+
+  // --- DATA STATES ---
   const [meetings, setMeetings] = useState([
-    { 
-      id: 1, 
-      purpose: "Hearing Review", 
-      time: "9:00 AM to 10:30 AM", 
-      dateLabel: "MAR 2",
-      fullDate: "Tuesday, March 2"
-    }
+    { id: 1, purpose: 'Hearing Review', month: 'MAR', day: 2, time: '9:00 AM to 10:30 AM' }
   ]);
 
-  const months = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
-  ];
+  const [requestingParties, setRequestingParties] = useState(['']);
+  const [respondingParties, setRespondingParties] = useState(['']);
 
-  const daysArray = Array.from({ length: 31 }, (_, i) => i + 1);
-  const year = currentDate.getFullYear();
-  const month = currentDate.getMonth();
-  const monthName = months[month];
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const firstDayIndex = new Date(year, month, 1).getDay();
-  const startingOffset = firstDayIndex === 0 ? 6 : firstDayIndex - 1;
+  const [formData, setFormData] = useState({
+    purpose: '',
+    day: '2',
+    month: 'FEBRUARY',
+    startTime: '09:00',
+    endTime: '10:30',
+    claims: '',
+    otherIssues: '',
+    officer: ''
+  });
 
-  // --- FUNCTIONS ---
-  const handleDateClick = (day) => {
-    const clickedDate = new Date(year, month, day);
-    const dayOfWeek = clickedDate.getDay(); 
-    
-    if (dayOfWeek === 0 || dayOfWeek === 6) {
-      alert("Weekends (Saturday/Sunday) are not available for scheduling.");
-      return;
-    }
-    
-    setSelectedDay(day.toString());
-    setSelectedMonth(monthName.toUpperCase());
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleCreateSchedule = () => {
-    // Basic Validation
-    if (!purpose || !selectedDay || !selectedMonth || !startTime || !endTime) {
-      alert("Please fill in the Purpose, Date, and Time.");
+  const handleCreate = () => {
+    if (!formData.purpose.trim()) {
+      toast.error("Please enter a meeting purpose.");
       return;
     }
-
-    const newMeeting = {
+    const newEntry = {
       id: Date.now(),
-      purpose: purpose,
-      time: `${startTime} to ${endTime}`,
-      dateLabel: `${selectedMonth.substring(0, 3)} ${selectedDay}`,
-      requesting: requestingParties.map(p => p.name).filter(n => n !== ""),
-      responding: respondingParties.map(p => p.name).filter(n => n !== ""),
+      purpose: formData.purpose,
+      month: formData.month.substring(0, 3).toUpperCase(),
+      day: parseInt(formData.day),
+      time: `${formData.startTime} to ${formData.endTime}`,
     };
-
-    setMeetings([newMeeting, ...meetings]);
-    
-    // Reset Form and Go Back
-    setPurpose('');
-    setStartTime('');
-    setEndTime('');
-    setLaborViolation('');
-    setOtherIssue('');
+    setMeetings([newEntry, ...meetings]);
+    toast.success("Schedule Created!");
     setIsCreating(false);
-    alert("Schedule created successfully!");
-  };
-
-  const addParty = (type) => {
-    const newParty = { id: Date.now(), name: '' };
-    if (type === 'req') setRequestingParties([...requestingParties, newParty]);
-    else setRespondingParties([...respondingParties, newParty]);
-  };
-
-  const deleteParty = (type, id) => {
-    const list = type === 'req' ? requestingParties : respondingParties;
-    if (list.length > 1) {
-      if (type === 'req') setRequestingParties(list.filter(p => p.id !== id));
-      else setRespondingParties(list.filter(p => p.id !== id));
-    }
-  };
-
-  const handleInputChange = (type, id, value) => {
-    const update = (list) => list.map(p => p.id === id ? { ...p, name: value } : p);
-    if (type === 'req') setRequestingParties(update(requestingParties));
-    else setRespondingParties(update(respondingParties));
   };
 
   if (showLog) return <ActivityLog onBack={() => setShowLog(false)} />;
 
-  return (
-    <div className="schedule-outer-container">
-      
-      {/* MANAGE PARTIES MODAL */}
-      {showManageParty && (
-        <div className="party-modal-overlay">
-          <div className="party-modal-card">
-            <div className="party-modal-header">
-              <h2>Manage Parties</h2>
-              <button className="close-x-btn" onClick={() => setShowManageParty(false)}>
-                <FaTimes />
-              </button>
-            </div>
-            <div className="party-modal-body">
-              <div className="party-section">
-                <label className="section-label">Requesting Party</label>
-                <div className="party-scroll-area">
-                  {requestingParties.map((party) => (
-                    <div key={party.id} className="party-input-row">
-                      <input 
-                        type="text" 
-                        placeholder="Insert name here" 
-                        className="dark-party-input"
-                        value={party.name}
-                        onChange={(e) => handleInputChange('req', party.id, e.target.value)}
-                      />
-                      <button className="party-delete-btn" onClick={() => deleteParty('req', party.id)}>
-                        <FaTrashAlt />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-                <button className="add-another-btn" onClick={() => addParty('req')}>
-                  <FaPlus size={10} /> Add Another
-                </button>
-              </div>
-
-              <div className="party-section">
-                <label className="section-label">Responding Party</label>
-                <div className="party-scroll-area">
-                  {respondingParties.map((party) => (
-                    <div key={party.id} className="party-input-row">
-                      <input 
-                        type="text" 
-                        placeholder="Insert name here" 
-                        className="dark-party-input"
-                        value={party.name}
-                        onChange={(e) => handleInputChange('res', party.id, e.target.value)}
-                      />
-                      <button className="party-delete-btn" onClick={() => deleteParty('res', party.id)}>
-                        <FaTrashAlt />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-                <button className="add-another-btn" onClick={() => addParty('res')}>
-                  <FaPlus size={10} /> Add Another
-                </button>
-              </div>
-            </div>
-            <div className="party-modal-footer">
-              <button className="party-save-btn" onClick={() => setShowManageParty(false)}>Save Changes</button>
-            </div>
-          </div>
+  // Modal Component
+  const ManagePartiesModal = () => (
+    <div className="sched-modal-overlay">
+      <div className="sched-modal-container">
+        <div className="sched-modal-header">
+          <h3>Manage Parties</h3>
+          <FaTimes className="close-icon" onClick={() => setShowPartyModal(false)} />
         </div>
-      )}
+        <div className="sched-modal-body">
+          <label className="sched-modal-label">{modalType === 'requesting' ? 'Requesting Party' : 'Responding Party'}</label>
+          <div className="party-inputs-list">
+            {(modalType === 'requesting' ? requestingParties : respondingParties).map((party, index) => (
+              <div key={index} className="party-input-row">
+                <input 
+                  type="text" 
+                  placeholder="Insert name here" 
+                  value={party}
+                  onChange={(e) => {
+                    const newList = modalType === 'requesting' ? [...requestingParties] : [...respondingParties];
+                    newList[index] = e.target.value;
+                    modalType === 'requesting' ? setRequestingParties(newList) : setRespondingParties(newList);
+                  }}
+                />
+                <button className="delete-party-btn" onClick={() => {
+                  const newList = modalType === 'requesting' ? [...requestingParties] : [...respondingParties];
+                  newList.splice(index, 1);
+                  modalType === 'requesting' ? setRequestingParties(newList) : setRespondingParties(newList);
+                }}>
+                  <FaTrash />
+                </button>
+              </div>
+            ))}
+          </div>
+          <button className="add-another-btn" onClick={() => {
+             modalType === 'requesting' ? setRequestingParties([...requestingParties, '']) : setRespondingParties([...respondingParties, '']);
+          }}>
+            <FaPlus /> Add Another
+          </button>
+        </div>
+        <div className="sched-modal-footer">
+          <button className="save-modal-btn" onClick={() => setShowPartyModal(false)}>Save</button>
+        </div>
+      </div>
+    </div>
+  );
 
-      {/* HEADER SECTION */}
-      <div className="schedule-header">
-        <div className="header-left">
-          <button className="back-circle-btn" onClick={() => setIsCreating(false)}>
+  return (
+    <div className="schedule-page-wrapper">
+      <ToastContainer />
+      {showPartyModal && <ManagePartiesModal />}
+
+      <div className="header-container-flat">
+        <div className="header-inner">
+          <button className="back-btn-transparent" onClick={() => isCreating ? setIsCreating(false) : navigate(-1)}>
             <FaArrowLeft />
           </button>
-          <div className="header-text">
-            <h1>Schedule a Meeting</h1>
-            {!isCreating && <p>Your daily agenda</p>}
+          <div>
+            <span className="header-title">{isCreating ? "Schedule a Meeting" : "Schedule a Meeting"}</span>
+            {!isCreating && <span className="header-subtitle">Your daily agenda</span>}
           </div>
         </div>
         {!isCreating && (
-          <button className="create-sched-btn" onClick={() => setIsCreating(true)}>
+          <button className="red-create-btn" onClick={() => setIsCreating(true)}>
             <FaPlus /> Create Schedule
           </button>
         )}
@@ -208,125 +160,116 @@ const Schedule = () => {
       <div className="schedule-content-grid">
         <div className="left-column-wrapper">
           {!isCreating ? (
-            <div className="white-card meetings-card">
-              <h2 className="card-title">Upcoming Meetings</h2>
-              <div className="meetings-list">
-                {meetings.map((item) => (
-                  <div key={item.id} className="meeting-row">
-                    <span className="time-label">{item.time.split(' ')[0]} {item.time.split(' ')[1]}</span>
-                    <div className="meeting-blue-pill">
-                      <div className="date-tag">{item.dateLabel}</div>
-                      <div className="meeting-info">
-                        <h3>{item.purpose}</h3>
-                        <p><FaClock /> {item.time}</p>
-                      </div>
-                      <button className="view-pill-btn" onClick={() => setShowLog(true)}>View</button>
-                    </div>
+            <div className="white-card-agenda">
+              <h2 className="section-title">Upcoming Meetings</h2>
+              {meetings.map((m) => (
+                <div key={m.id} className="meeting-pill">
+                  <div className="pill-date-box">
+                    <span className="pill-month">{m.month}</span>
+                    <span className="pill-day">{m.day}</span>
                   </div>
-                ))}
-              </div>
+                  <div className="pill-content">
+                    <h3>{m.purpose}</h3>
+                    <p><FaClock /> {m.time}</p>
+                  </div>
+                  <button className="view-pill-btn" onClick={() => setShowLog(true)}>View</button>
+                </div>
+              ))}
             </div>
           ) : (
-            <div className="white-card create-form-container">
-              <h2 className="form-main-title">Create New Schedule</h2>
-              <div className="form-group">
+            <div className="create-form-card">
+              <h2 className="form-title">Create New Schedule</h2>
+              <div className="form-field">
                 <label>Purpose</label>
-                <input 
-                  type="text" 
-                  placeholder="Type here" 
-                  className="form-input-field" 
-                  value={purpose}
-                  onChange={(e) => setPurpose(e.target.value)}
-                />
+                <input type="text" name="purpose" value={formData.purpose} onChange={handleInputChange} placeholder="Type here" />
               </div>
-
-              <div className="form-row">
-                <div className="form-group">
+              
+              <div className="form-split">
+                <div className="form-field">
                   <label>Requesting Party</label>
-                  <button className="manage-party-btn" onClick={() => setShowManageParty(true)}>Manage Party</button>
+                  <button className="manage-btn-dark" onClick={() => { setModalType('requesting'); setShowPartyModal(true); }}>
+                    Manage Party ({requestingParties.filter(p => p !== '').length})
+                  </button>
                 </div>
-                <div className="form-group">
+                <div className="form-field">
                   <label>Responding Party</label>
-                  <button className="manage-party-btn" onClick={() => setShowManageParty(true)}>Manage Party</button>
+                  <button className="manage-btn-dark" onClick={() => { setModalType('responding'); setShowPartyModal(true); }}>
+                    Manage Party ({respondingParties.filter(p => p !== '').length})
+                  </button>
                 </div>
               </div>
 
-              <div className="form-row">
-                <div className="form-group flex-2">
-                  <label>Availability:</label>
-                  <div className="availability-pickers">
-                    <div className="custom-select-wrapper">
-                      <select value={selectedDay} onChange={(e) => setSelectedDay(e.target.value)}>
-                        <option value="">DAY</option>
-                        {daysArray.map(d => <option key={d} value={d}>{d}</option>)}
+              <div className="form-split">
+                <div className="form-field-group">
+                  <label className="group-label">Availability:</label>
+                  <div className="select-row">
+                    <div className="custom-select small-select">
+                      <label className="inner-label">DAY</label>
+                      <select name="day" value={formData.day} onChange={handleInputChange}>
+                          {Array.from({length: 31}, (_, i) => i+1).map(d => <option key={d} value={d}>{d}</option>)}
                       </select>
-                      <FaChevronDown className="select-arrow" />
+                      <FaChevronDown className="select-chevron" />
                     </div>
-                    <div className="custom-select-wrapper">
-                      <select value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)}>
-                        <option value="">MONTH</option>
-                        {months.map(m => <option key={m} value={m.toUpperCase()}>{m}</option>)}
+                    <div className="custom-select month-select">
+                      <label className="inner-label">MONTH</label>
+                      <select name="month" value={formData.month} onChange={handleInputChange}>
+                          {months.map(m => <option key={m} value={m.toUpperCase()}>{m.toUpperCase()}</option>)}
                       </select>
-                      <FaChevronDown className="select-arrow" />
+                      <FaChevronDown className="select-chevron" />
                     </div>
                   </div>
                 </div>
-                <div className="form-group flex-1">
-                  <label>TIME</label>
-                  <div className="time-range-picker">
+                <div className="form-field-group">
+                  <label className="group-label">TIME</label>
+                  <div className="time-row-ui">
                     <div className="time-box">
-                        <FaClock /> 
-                        <input type="text" placeholder="00:00" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
+                      <input type="time" name="startTime" value={formData.startTime} onChange={handleInputChange} /><FaClock />
                     </div>
                     <span>—</span>
                     <div className="time-box">
-                        <FaClock /> 
-                        <input type="text" placeholder="00:00" value={endTime} onChange={(e) => setEndTime(e.target.value)} />
+                      <input type="time" name="endTime" value={formData.endTime} onChange={handleInputChange} /><FaClock />
                     </div>
                   </div>
                 </div>
               </div>
 
-              <h3 className="section-subtitle">Claims/Issues</h3>
-              <div className="form-row">
-                <div className="form-group">
-                  <label className="faded-label">Labor Standards Violations</label>
-                  <input 
-                    type="text" 
-                    placeholder="Type here" 
-                    className="form-input-field" 
-                    value={laborViolation}
-                    onChange={(e) => setLaborViolation(e.target.value)}
-                  />
+              {/* Claims/Issues with Dropdown Logic */}
+              <div className="form-split">
+                 <div className="form-field">
+                  <label>Claims/Issues</label>
+                  <p className="sub-label">Labor Standards Violations</p>
+                  <div className="custom-select full-width-dropdown">
+                    <select name="claims" value={formData.claims} onChange={handleInputChange}>
+                      <option value="" disabled>Select Violation</option>
+                      {laborStandardsOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                    </select>
+                    <FaChevronDown className="select-chevron" />
+                  </div>
                 </div>
-                <div className="form-group">
-                  <label className="faded-label">Other Issues</label>
-                  <input 
-                    type="text" 
-                    placeholder="Type here" 
-                    className="form-input-field" 
-                    value={otherIssue}
-                    onChange={(e) => setOtherIssue(e.target.value)}
-                  />
+                <div className="form-field">
+                  <label>&nbsp;</label>
+                  <p className="sub-label">Other Issues</p>
+                  <input type="text" name="otherIssues" value={formData.otherIssues} onChange={handleInputChange} placeholder="Type here" />
                 </div>
               </div>
 
-              <div className="form-group">
+              {/* Hearing Officer Expanded Dropdown */}
+              <div className="form-field">
                 <label>Available Hearing Officer</label>
-                <div className="custom-select-wrapper full-width">
-                  <select value={selectedOfficer} onChange={(e) => setSelectedOfficer(e.target.value)}>
+                <div className="custom-select full-width-dropdown expanded-officer">
+                  <select name="officer" value={formData.officer} onChange={handleInputChange}>
                     <option value="">Select Officer Name</option>
-                    <option value="Officer A">Officer A</option>
-                    <option value="Officer B">Officer B</option>
+                    <option value="Atty. Juan Dela Cruz">Atty. Juan Dela Cruz</option>
+                    <option value="Atty. Maria Santos">Atty. Maria Santos</option>
                   </select>
-                  <FaChevronDown className="select-arrow" />
+                  <FaChevronDown className="select-chevron-large" />
                 </div>
               </div>
 
-              <div className="form-actions">
-                <button className="submit-create-btn" onClick={handleCreateSchedule}>Create</button>
-                <button className="alt-activity-log-btn" onClick={() => setShowLog(true)}>
-                  <FaHistory /> Activity Log
+              <div className="form-actions-row">
+                <button className="final-create-btn" onClick={handleCreate}>Create</button>
+                <button className="final-log-btn" onClick={() => setShowLog(true)}>
+                    <FaHistory /> Activity Log
                 </button>
               </div>
             </div>
@@ -334,47 +277,27 @@ const Schedule = () => {
         </div>
 
         <div className="right-column">
-          <div className="white-card calendar-mini-card">
+          <div className="white-card-cal">
             <div className="cal-nav">
-              <FaChevronLeft onClick={() => setCurrentDate(new Date(year, month - 1, 1))} />
-              <h3>{monthName} {year}</h3>
-              <FaChevronRight onClick={() => setCurrentDate(new Date(year, month + 1, 1))} />
+              <FaChevronLeft onClick={() => changeMonth(-1)} style={{cursor: 'pointer'}} />
+              <h3>{months[viewDate.getMonth()]} {viewDate.getFullYear()}</h3>
+              <FaChevronRight onClick={() => changeMonth(1)} style={{cursor: 'pointer'}} />
             </div>
             <div className="cal-days-header">
-              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(d => <span key={d}>{d}</span>)}
+               {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(d => <span key={d}>{d}</span>)}
             </div>
             <div className="cal-grid-mini">
-              {Array.from({ length: startingOffset }).map((_, i) => <div key={i} />)}
-              {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(day => {
-                const isSelected = selectedDay === day.toString() && selectedMonth === monthName.toUpperCase();
-                return (
-                  <div 
-                    key={day} 
-                    className={`cal-date ${isSelected ? 'active' : ''}`}
-                    onClick={() => handleDateClick(day)}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    {day}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-          
-          {isCreating && (
-            <div className="recent-hearings-section">
-              <h3 className="recent-title">Recent Hearings</h3>
-              {meetings.slice(0, 2).map((item) => (
-                <div key={item.id} className="white-card mini-hearing-pill">
-                  <div className="pill-date">Tuesday<br/><b>{item.dateLabel.split(' ')[1]}</b></div>
-                  <div className="pill-info">
-                    <h4>{item.purpose}</h4>
-                    <p><FaClock /> {item.time} <span className="green-text">Active</span></p>
-                  </div>
-                  <button className="view-btn-sm" onClick={() => setShowLog(true)}>View</button>
+              {daysArray.map(day => (
+                <div key={day} className={`cal-date ${day === parseInt(formData.day) && months[viewDate.getMonth()].toUpperCase() === formData.month ? 'active' : ''}`}>
+                  {day}
                 </div>
               ))}
             </div>
+          </div>
+          {!isCreating && (
+            <button className="sidebar-log-btn" onClick={() => setShowLog(true)}>
+               <FaHistory /> Activity Log
+            </button>
           )}
         </div>
       </div>
