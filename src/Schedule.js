@@ -203,14 +203,14 @@ const Schedule = () => {
                 <div className="form-field-group">
                   <label className="group-label">Availability:</label>
                   <div className="select-row">
-                    <div className="custom-select small-select">
+                    <div className="sched-custom-select small-select">
                       <label className="inner-label">DAY</label>
                       <select name="day" value={formData.day} onChange={handleInputChange}>
                           {Array.from({length: 31}, (_, i) => i+1).map(d => <option key={d} value={d}>{d}</option>)}
                       </select>
                       <FaChevronDown className="select-chevron" />
                     </div>
-                    <div className="custom-select month-select">
+                    <div className="sched-custom-select month-select">
                       <label className="inner-label">MONTH</label>
                       <select name="month" value={formData.month} onChange={handleInputChange}>
                           {months.map(m => <option key={m} value={m.toUpperCase()}>{m.toUpperCase()}</option>)}
@@ -238,7 +238,7 @@ const Schedule = () => {
                  <div className="form-field">
                   <label>Claims/Issues</label>
                   <p className="sub-label">Labor Standards Violations</p>
-                  <div className="custom-select full-width-dropdown">
+                  <div className="sched-custom-select full-width-dropdown">
                     <select name="claims" value={formData.claims} onChange={handleInputChange}>
                       <option value="" disabled>Select Violation</option>
                       {laborStandardsOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
@@ -256,7 +256,7 @@ const Schedule = () => {
               {/* Hearing Officer Expanded Dropdown */}
               <div className="form-field">
                 <label>Available Hearing Officer</label>
-                <div className="custom-select full-width-dropdown expanded-officer">
+                <div className="sched-custom-select full-width-dropdown expanded-officer">
                   <select name="officer" value={formData.officer} onChange={handleInputChange}>
                     <option value="">Select Officer Name</option>
                     <option value="Atty. Juan Dela Cruz">Atty. Juan Dela Cruz</option>
