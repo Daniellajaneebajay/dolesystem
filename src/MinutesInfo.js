@@ -1,13 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { 
-  FaArrowLeft, FaPlus, FaTrash, FaDownload, 
-  FaTimes, FaCheckSquare, FaSquare, FaExclamationCircle, FaSave 
-} from 'react-icons/fa';
-import html2pdf from 'html2pdf.js';
+import { FaArrowLeft, FaPlus, FaTrash, FaDownload, FaTimes, FaCheckSquare, FaSquare, FaExclamationCircle, FaSave } from 'react-icons/fa';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-
+import html2pdf from 'html2pdf.js';
 import ConfirmationModal from './ConfirmationModal';
 import './MinutesInfo.css';
 

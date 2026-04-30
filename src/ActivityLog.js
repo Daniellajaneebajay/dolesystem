@@ -1,11 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom'; 
+import { FaArrowLeft, FaEdit, FaHistory, FaListUl, FaEllipsisV, FaFileAlt, FaCommentDots, FaTrashAlt,FaArchive, FaTimesCircle } from 'react-icons/fa';
 import './ActivityLog.css';
-import { 
-  FaArrowLeft, FaEdit, FaHistory, FaListUl, 
-  FaEllipsisV, FaFileAlt, FaCommentDots, FaTrashAlt,
-  FaArchive, FaTimesCircle
-} from 'react-icons/fa';
 
 // ---------------------------------------------------------------------------
 // Same status logic as MainSched — kept local to avoid import coupling.
@@ -344,6 +340,7 @@ const ActivityLog = ({ onBack }) => {
                           </div>
                         ) : (
                           <div className="archive-actions-group">
+
                             <button 
                               className={`arch-btn minutes ${row.hasMinutes ? 'exists' : 'empty'} ${row.status === 'Cancelled' ? 'disabled' : ''}`} 
                               onClick={() => handleViewMinutes(row)} 

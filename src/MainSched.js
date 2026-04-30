@@ -1,17 +1,10 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { FaClock, FaArrowLeft, FaPlus, FaHistory, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import './MainSched.css';
 import ActivityLog from './ActivityLog'; 
 import DetailedScheduleForm from './Schedule'; 
 import ViewSched from './ViewSched';
-import { 
-  FaClock, 
-  FaArrowLeft, 
-  FaPlus,
-  FaHistory,
-  FaChevronLeft,
-  FaChevronRight
-} from 'react-icons/fa';
 
 // ---------------------------------------------------------------------------
 // Shared helper: compute real-time status from hearing data + current time.

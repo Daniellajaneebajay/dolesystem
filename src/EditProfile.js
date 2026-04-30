@@ -1,6 +1,6 @@
 import React, { useState, useRef } from "react";
-import "./EditProfile.css";
 import { FaCloudUploadAlt, FaEye, FaEyeSlash } from "react-icons/fa";
+import "./EditProfile.css";
 
 const EditProfile = ({ user, setUser }) => {
   // --- LOCAL FORM STATE ---

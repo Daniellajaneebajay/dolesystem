@@ -1,15 +1,9 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom"; 
-import "./Minutes.css";
-
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-
-import { 
-  FaSearch, FaFileAlt, FaEllipsisV, FaChevronLeft, 
-  FaChevronRight, FaTrashAlt, FaArchive, FaCalendarCheck, 
-  FaUserTie, FaInbox, FaArrowLeft, FaClock 
-} from "react-icons/fa";
+import { FaSearch, FaFileAlt, FaEllipsisV, FaChevronLeft, FaChevronRight, FaTrashAlt, FaArchive, FaCalendarCheck, FaUserTie, FaInbox, FaArrowLeft, FaClock } from "react-icons/fa";
+import "./Minutes.css";
 
 const Minutes = () => {
   const navigate = useNavigate(); 

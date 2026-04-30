@@ -1,22 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import './Schedule.css';
-import {
-  FaChevronLeft,
-  FaChevronRight,
-  FaHistory,
-  FaArrowLeft,
-  FaTrash,
-  FaPlus,
-  FaTimes,
-  FaExclamationTriangle,
-  FaClock,
-  FaChevronUp,
-  FaChevronDown
-} from 'react-icons/fa';
-
+import { FaChevronLeft, FaChevronRight, FaHistory, FaArrowLeft, FaTrash, FaPlus, FaTimes, FaExclamationTriangle, FaClock, FaChevronUp, FaChevronDown } from 'react-icons/fa';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import './Schedule.css';
 
 const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 

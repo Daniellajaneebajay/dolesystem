@@ -1,11 +1,6 @@
 import React, { useState } from "react";
+import { FaSearch, FaFilter, FaPlus, FaEdit, FaEllipsisV, FaTrash, FaUserSlash, FaChevronLeft, FaChevronRight, FaUsers, FaCheckCircle, FaTimesCircle, FaHistory, FaCaretDown, FaTimes } from "react-icons/fa";
 import "./UserManagement.css";
-import { 
-  FaSearch, FaFilter, FaPlus, FaEdit, FaEllipsisV, 
-  FaTrash, FaUserSlash, FaChevronLeft, FaChevronRight, 
-  FaUsers, FaCheckCircle, FaTimesCircle, FaHistory,
-  FaCaretDown, FaTimes 
-} from "react-icons/fa";
 
 const usersData = [
   { name: "Matthew Wilton", position: "SR. LEO", email: "email@dole.gov.ph", date: "06-03-2021", img: "/assets/unknown2.jpg" },
