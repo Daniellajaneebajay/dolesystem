@@ -7,6 +7,45 @@ import {
   FaArchive, FaTimesCircle
 } from 'react-icons/fa';
 
+// ---------------------------------------------------------------------------
+// Same status logic as MainSched — kept local to avoid import coupling.
+// Returns: "Pending" | "In Session" | "Finished" | "Cancelled" | "Done"
+// ---------------------------------------------------------------------------
+const computeLiveStatus = (hearing, now) => {
+  if (hearing.status === 'Cancelled' || hearing.status === 'Done') return hearing.status;
+
+  try {
+    const MONTHS = [
+      "January","February","March","April","May","June",
+      "July","August","September","October","November","December"
+    ];
+    const year       = hearing.year || now.getFullYear();
+    const monthIndex = MONTHS.indexOf(hearing.monthName);
+    const day        = parseInt(hearing.day);
+    const parts      = hearing.time.split(' to ');
+    if (parts.length < 2) return hearing.status || 'Pending';
+
+    const parseTime = (timeStr) => {
+      const trimmed              = timeStr.trim();
+      const [timePart, modifier] = trimmed.split(' ');
+      let [h, m]                 = timePart.split(':');
+      h = parseInt(h, 10);
+      if (modifier === 'PM' && h !== 12) h += 12;
+      if (modifier === 'AM' && h === 12) h = 0;
+      return new Date(year, monthIndex, day, h, parseInt(m, 10), 0);
+    };
+
+    const start = parseTime(parts[0]);
+    const end   = parseTime(parts[1]);
+
+    if (now >= start && now <= end) return 'In Session';
+    if (now < start)               return 'Pending';
+    return 'Finished';
+  } catch {
+    return hearing.status || 'Pending';
+  }
+};
+
 const ActivityLog = ({ onBack }) => {
   const [logs, setLogs] = useState([]);
   const [viewMode, setViewMode] = useState('active'); 
@@ -21,83 +60,63 @@ const ActivityLog = ({ onBack }) => {
   const navigate = useNavigate();
   const dropdownRef = useRef(null);
 
-  // 1. Live Status Timer
+  // Tick every 30 s so status badges stay live
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 30000);
     return () => clearInterval(timer);
   }, []);
 
-  // 2. Click Outside Dropdown Logic
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setActiveMenuId(null);
       }
     };
-    if (activeMenuId) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
+    if (activeMenuId) document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [activeMenuId]);
 
-  // 3. Status Calculator
-  const getLiveStatus = useCallback((row) => {
-    if (row.status === 'Cancelled' || row.status === 'Done') return row.status;
-    try {
-      const monthsArr = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-      const year = row.year || now.getFullYear();
-      const monthIndex = monthsArr.indexOf(row.monthName);
-      const day = parseInt(row.day);
-      const [startStr, endStr] = row.time.split(' to ');
-
-      const parseTimeToDate = (timeStr) => {
-        const [time, modifier] = timeStr.split(' ');
-        let [hours, minutes] = time.split(':');
-        hours = parseInt(hours, 10);
-        if (modifier === 'PM' && hours !== 12) hours += 12;
-        if (modifier === 'AM' && hours === 12) hours = 0;
-        return new Date(year, monthIndex, day, hours, parseInt(minutes, 10), 0);
-      };
-
-      const startTime = parseTimeToDate(startStr);
-      const endTime = parseTimeToDate(endStr);
-
-      if (now >= startTime && now <= endTime) return "In Session";
-      else if (now < startTime) return "Pending";
-      else return "Finished";
-    } catch (error) {
-      return row.status || "Pending";
-    }
-  }, [now]);
-
-  // 4. Data Loading
+  // -------------------------------------------------------------------
+  // loadLogs — splits hearings into Active vs Archives using live status
+  //
+  // Active   = Pending | In Session   (meeting hasn't ended yet)
+  // Archives = Done | Cancelled | Finished  (ended or manually closed)
+  // -------------------------------------------------------------------
   const loadLogs = useCallback(() => {
-    const savedHearings = JSON.parse(localStorage.getItem('hearings')) || [];
+    const savedHearings    = JSON.parse(localStorage.getItem('hearings')) || [];
     const savedMinutesFiles = JSON.parse(localStorage.getItem('allMinutesFiles')) || [];
-    
-    const processedLogs = [...savedHearings].sort((a, b) => b.id - a.id).map(hearing => {
-      const minuteFile = savedMinutesFiles.find(
-        m => m.hearingTitle === hearing.title || 
-             m.matter === hearing.title || 
-             String(m.linkedScheduleId) === String(hearing.id)
-      );
-      return { 
-        ...hearing, 
-        hasMinutes: !!minuteFile, 
-        minuteId: minuteFile ? minuteFile.id : null 
-      };
-    });
-    
+    const currentNow       = new Date();
+
+    const processedLogs = [...savedHearings]
+      .sort((a, b) => b.id - a.id)
+      .map(hearing => {
+        const minuteFile = savedMinutesFiles.find(
+          m => m.hearingTitle === hearing.title ||
+               m.matter === hearing.title ||
+               String(m.linkedScheduleId) === String(hearing.id)
+        );
+        // Compute the true live status for routing purposes
+        const liveStatus = computeLiveStatus(hearing, currentNow);
+        return { 
+          ...hearing,
+          _liveStatus: liveStatus,   // used for tab routing below
+          hasMinutes: !!minuteFile, 
+          minuteId: minuteFile ? minuteFile.id : null 
+        };
+      });
+
     if (viewMode === 'active') {
-      setLogs(processedLogs.filter(h => {
-        const status = h.status?.toLowerCase();
-        return status !== 'done' && status !== 'cancelled';
-      }));
+      // Active tab: only meetings that haven't ended yet
+      setLogs(processedLogs.filter(h =>
+        h._liveStatus === 'Pending' || h._liveStatus === 'In Session'
+      ));
     } else {
-      setLogs(processedLogs.filter(h => {
-        const status = h.status?.toLowerCase();
-        return status === 'done' || status === 'cancelled';
-      }));
+      // Archives tab: meetings that are done, cancelled, or whose time has passed
+      setLogs(processedLogs.filter(h =>
+        h._liveStatus === 'Done' ||
+        h._liveStatus === 'Cancelled' ||
+        h._liveStatus === 'Finished'
+      ));
     }
   }, [viewMode]);
 
@@ -105,7 +124,27 @@ const ActivityLog = ({ onBack }) => {
     loadLogs();
   }, [loadLogs]);
 
-  // 5. Action Handlers
+  // Also reload when storage changes (e.g. MainSched promotes a hearing to Done)
+  useEffect(() => {
+    const onStorage = () => loadLogs();
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, [loadLogs]);
+
+  // Re-run loadLogs on every tick so rows move between tabs live
+  useEffect(() => {
+    loadLogs();
+  }, [now, loadLogs]);
+
+  // -------------------------------------------------------------------
+  // getLiveStatus — used only for the displayed status pill in the table.
+  // Uses _liveStatus that was already computed during loadLogs.
+  // -------------------------------------------------------------------
+  const getDisplayStatus = (row) => row._liveStatus || row.status || 'Pending';
+
+  // -------------------------------------------------------------------
+  // Action handlers
+  // -------------------------------------------------------------------
   const handleToggleMenu = (e, id) => {
     e.preventDefault();
     e.stopPropagation();
@@ -113,7 +152,7 @@ const ActivityLog = ({ onBack }) => {
   };
 
   const handleArchive = (id) => {
-    const saved = JSON.parse(localStorage.getItem('hearings')) || [];
+    const saved   = JSON.parse(localStorage.getItem('hearings')) || [];
     const updated = saved.map(h => h.id === id ? { ...h, status: 'Done' } : h);
     localStorage.setItem('hearings', JSON.stringify(updated));
     window.dispatchEvent(new Event('storage'));
@@ -123,7 +162,7 @@ const ActivityLog = ({ onBack }) => {
 
   const handleDelete = (id) => {
     if (window.confirm("Permanently delete this record?")) {
-      const saved = JSON.parse(localStorage.getItem('hearings')) || [];
+      const saved   = JSON.parse(localStorage.getItem('hearings')) || [];
       const updated = saved.filter(h => h.id !== id);
       localStorage.setItem('hearings', JSON.stringify(updated));
       window.dispatchEvent(new Event('storage'));
@@ -141,10 +180,10 @@ const ActivityLog = ({ onBack }) => {
   const submitCancellation = () => {
     const finalReason = cancelReason === 'Other' ? otherReason : cancelReason;
     if (!finalReason) return alert("Please select a reason.");
-    const saved = JSON.parse(localStorage.getItem('hearings')) || [];
-    const updated = saved.map(h => 
-      h.id === selectedHearing.id 
-        ? { ...h, status: 'Cancelled', cancelReason: finalReason } 
+    const saved   = JSON.parse(localStorage.getItem('hearings')) || [];
+    const updated = saved.map(h =>
+      h.id === selectedHearing.id
+        ? { ...h, status: 'Cancelled', cancelReason: finalReason }
         : h
     );
     localStorage.setItem('hearings', JSON.stringify(updated));
@@ -155,24 +194,19 @@ const ActivityLog = ({ onBack }) => {
     loadLogs();
   };
 
-  // FIXED: Edit navigates to /schedule with returnToSchedule state.
-  // MainSched's useEffect watches for location.state.returnToSchedule and
-  // opens ViewSched, then the Edit button inside ViewSched opens Schedule form
-  // pre-filled with all hearing data (title, parties, time, date, officer, etc.)
   const handleEdit = (row) => {
     navigate('/schedule', {
       state: {
-        returnToSchedule: row   // MainSched picks this up and sets viewingSchedule = row
+        editFromLog: row,
+        returnToActivityLog: true
       }
     });
   };
 
-  // FIXED: Minutes button uses /minutesinfo (correct route) with state
   const handleViewMinutes = (row) => {
     if (row.status === 'Cancelled') return;
 
     if (row.minuteId) {
-      // Existing minute — open it with fileId in state, back arrow goes to /schedule
       navigate('/minutesinfo', { 
         state: { 
           fileId: row.minuteId,
@@ -181,7 +215,6 @@ const ActivityLog = ({ onBack }) => {
         } 
       });
     } else {
-      // No minute yet — create new one pre-populated from hearing data
       navigate('/minutesinfo', { 
         state: { 
           initialData: row,
@@ -264,7 +297,7 @@ const ActivityLog = ({ onBack }) => {
             <tbody>
               {logs.length > 0 ? (
                 logs.map((row, index) => {
-                  const currentStatus = getLiveStatus(row);
+                  const displayStatus = getDisplayStatus(row);
                   return (
                     <tr key={row.id}>
                       <td className="col-no">{index + 1}</td>
@@ -273,17 +306,13 @@ const ActivityLog = ({ onBack }) => {
                       <td className="col-time">{row.time}</td>
                       <td className="col-purpose">{row.title}</td>
                       <td className="col-status">
-                        <span className={`status-pill ${currentStatus.toLowerCase().replace(/\s+/g, '-')}`}>
-                          {currentStatus}
+                        <span className={`status-pill ${displayStatus.toLowerCase().replace(/\s+/g, '-')}`}>
+                          {displayStatus}
                         </span>
                       </td>
                       <td className="col-action">
                         {viewMode === 'active' ? (
                           <div className="active-action-group">
-                            {/* FIXED: was navigate('/schedule-form', ...) — route doesn't exist.
-                                Now navigates to /schedule with returnToSchedule state so
-                                MainSched opens ViewSched → user clicks Edit → Schedule form
-                                pre-filled with all hearing details */}
                             <button 
                               className="arch-btn edit" 
                               title="Edit" 
@@ -315,13 +344,6 @@ const ActivityLog = ({ onBack }) => {
                           </div>
                         ) : (
                           <div className="archive-actions-group">
-                            <button 
-                              className="arch-btn remark" 
-                              title="View Remarks" 
-                              onClick={() => navigate(`/remarks/${row.id}`)}
-                            >
-                              <FaCommentDots />
-                            </button>
                             <button 
                               className={`arch-btn minutes ${row.hasMinutes ? 'exists' : 'empty'} ${row.status === 'Cancelled' ? 'disabled' : ''}`} 
                               onClick={() => handleViewMinutes(row)} 

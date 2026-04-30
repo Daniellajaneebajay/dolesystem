@@ -13,49 +13,144 @@ import {
   FaChevronRight
 } from 'react-icons/fa';
 
+// ---------------------------------------------------------------------------
+// Shared helper: compute real-time status from hearing data + current time.
+// Does NOT mutate anything. Returns one of:
+//   "Pending" | "In Session" | "Finished" | "Cancelled" | "Done"
+// ---------------------------------------------------------------------------
+export const computeLiveStatus = (hearing, now) => {
+  if (hearing.status === 'Cancelled' || hearing.status === 'Done') return hearing.status;
+
+  try {
+    const MONTHS = [
+      "January","February","March","April","May","June",
+      "July","August","September","October","November","December"
+    ];
+    const year       = hearing.year || now.getFullYear();
+    const monthIndex = MONTHS.indexOf(hearing.monthName);
+    const day        = parseInt(hearing.day);
+    const parts      = hearing.time.split(' to ');
+    if (parts.length < 2) return hearing.status || 'Pending';
+
+    const parseTime = (timeStr) => {
+      const trimmed            = timeStr.trim();
+      const [timePart, modifier] = trimmed.split(' ');
+      let [h, m]               = timePart.split(':');
+      h = parseInt(h, 10);
+      if (modifier === 'PM' && h !== 12) h += 12;
+      if (modifier === 'AM' && h === 12) h = 0;
+      return new Date(year, monthIndex, day, h, parseInt(m, 10), 0);
+    };
+
+    const start = parseTime(parts[0]);
+    const end   = parseTime(parts[1]);
+
+    if (now >= start && now <= end) return 'In Session';
+    if (now < start)               return 'Pending';
+    return 'Finished';
+  } catch {
+    return hearing.status || 'Pending';
+  }
+};
+
+// ---------------------------------------------------------------------------
+// Writes status: "Done" back to localStorage for every hearing whose
+// computed live status is "Finished". Fires window storage event so
+// ActivityLog re-renders and moves those rows to Archives automatically.
+// ---------------------------------------------------------------------------
+const promoteFinishedHearings = (now) => {
+  const saved = JSON.parse(localStorage.getItem('hearings')) || [];
+  let changed = false;
+
+  const updated = saved.map(h => {
+    if (h.status === 'Cancelled' || h.status === 'Done') return h;
+    if (computeLiveStatus(h, now) === 'Finished') {
+      changed = true;
+      return { ...h, status: 'Done' };
+    }
+    return h;
+  });
+
+  if (changed) {
+    localStorage.setItem('hearings', JSON.stringify(updated));
+    window.dispatchEvent(new Event('storage'));
+  }
+};
+
 const MainSched = ({ triggerToast, sidebarOpen = true }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [returnToActivityLog, setReturnToActivityLog] = useState(false)
-
   const [showLog, setShowLog] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
-  const [viewingSchedule, setViewingSchedule] = useState(null); 
+  const [viewingSchedule, setViewingSchedule] = useState(null);
+  const [returnToLog, setReturnToLog] = useState(false);
   
   const [now, setNow] = useState(new Date());
   const [currentDate, setCurrentDate] = useState(new Date()); 
   const [selectedDay, setSelectedDay] = useState(new Date().getDate()); 
   const [meetings, setMeetings] = useState([]);
 
-  // Check location state for return from MinutesInfo back button
+  // -------------------------------------------------------------------
+  // Minute timer — promotes finished hearings on mount and every minute
+  // -------------------------------------------------------------------
   useEffect(() => {
-    if (location.state?.returnToSchedule) {
-      const scheduleData = location.state.returnToSchedule;
-      setViewingSchedule(scheduleData);
-      setIsCreating(false);
-      setShowLog(false);
-      // Clear the state so it doesn't re-trigger
-      navigate('/schedule', { replace: true, state: {} });
-    }
-  }, [location.state, navigate]);
+    promoteFinishedHearings(new Date()); // run immediately on mount
 
-  useEffect(() => {
-    const timer = setInterval(() => setNow(new Date()), 60000);
+    const timer = setInterval(() => {
+      const tick = new Date();
+      setNow(tick);
+      promoteFinishedHearings(tick);
+    }, 60000);
+
     return () => clearInterval(timer);
   }, []);
 
+  // -------------------------------------------------------------------
+  // Location state routing
+  // -------------------------------------------------------------------
+  useEffect(() => {
+    if (!location.state) return;
+
+    if (location.state.returnToSchedule) {
+      setViewingSchedule(location.state.returnToSchedule);
+      setIsCreating(false);
+      setShowLog(false);
+      setReturnToLog(false);
+      navigate('/schedule', { replace: true, state: {} });
+      return;
+    }
+
+    if (location.state.editFromLog) {
+      setViewingSchedule(location.state.editFromLog);
+      setIsCreating(true);
+      setShowLog(false);
+      setReturnToLog(true);
+      navigate('/schedule', { replace: true, state: {} });
+      return;
+    }
+  }, [location.state, navigate]);
+
+  // -------------------------------------------------------------------
+  // Load meetings — only Pending or In Session appear on the agenda
+  // -------------------------------------------------------------------
   const loadMeetings = useCallback(() => {
     const saved = localStorage.getItem('hearings');
-    if (saved) {
-      const allHearings = JSON.parse(saved);
-      const activeOnly = allHearings.filter(h => h.status !== 'Cancelled' && h.status !== 'Done');
-      setMeetings(activeOnly);
-    } else {
-      setMeetings([]);
-    }
+    if (!saved) { setMeetings([]); return; }
+
+    const allHearings = JSON.parse(saved);
+    const currentNow  = new Date();
+
+    const visible = allHearings.filter(h => {
+      if (h.status === 'Cancelled' || h.status === 'Done') return false;
+      const live = computeLiveStatus(h, currentNow);
+      return live === 'Pending' || live === 'In Session';
+    });
+
+    setMeetings(visible);
   }, []);
 
+  // Re-run loadMeetings on every minute tick so the list updates live
   useEffect(() => {
     loadMeetings();
     window.addEventListener('focus', loadMeetings);
@@ -64,7 +159,7 @@ const MainSched = ({ triggerToast, sidebarOpen = true }) => {
       window.removeEventListener('focus', loadMeetings);
       window.removeEventListener('storage', loadMeetings);
     };
-  }, [isCreating, loadMeetings, showLog]);
+  }, [isCreating, loadMeetings, showLog, now]);
 
   const formatPartyName = (partyData) => {
     if (!partyData) return "N/A";
@@ -90,21 +185,21 @@ const MainSched = ({ triggerToast, sidebarOpen = true }) => {
 
   const groupedMeetings = useMemo(() => {
     const filtered = meetings.filter(m => {
-      const meetingDay = parseInt(m.day);
-      const isSameDay = meetingDay === selectedDay;
-      const savedDate = m.date || "";
-      const isSameMonth = savedDate.toLowerCase().includes(monthName.toLowerCase()) || 
-                          savedDate.toLowerCase().includes(monthName.substring(0, 3).toLowerCase());
-      const savedYear = parseInt(m.year);
-      const currentYear = currentDate.getFullYear();
-      const isSameYear = savedYear ? savedYear === currentYear : true;
+      const meetingDay  = parseInt(m.day);
+      const isSameDay   = meetingDay === selectedDay;
+      const savedDate   = m.date || "";
+      const isSameMonth =
+        savedDate.toLowerCase().includes(monthName.toLowerCase()) ||
+        savedDate.toLowerCase().includes(monthName.substring(0, 3).toLowerCase());
+      const savedYear   = parseInt(m.year);
+      const isSameYear  = savedYear ? savedYear === currentDate.getFullYear() : true;
       return isSameDay && isSameMonth && isSameYear;
     });
 
     const getTimeVal = (timeStr) => {
-      if (!timeStr) return { total: 0, hours: 0 };
+      if (!timeStr) return { total: 0 };
       const match = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
-      if (!match) return { total: 0, hours: 0 };
+      if (!match) return { total: 0 };
       let hours = parseInt(match[1]);
       const minutes = parseInt(match[2]);
       const modifier = match[3].toUpperCase();
@@ -113,14 +208,13 @@ const MainSched = ({ triggerToast, sidebarOpen = true }) => {
       return { hours, minutes, total: hours * 60 + minutes };
     };
 
-    const sorted = filtered.sort((a, b) => getTimeVal(a.time).total - getTimeVal(b.time).total);
+    const sorted = [...filtered].sort((a, b) => getTimeVal(a.time).total - getTimeVal(b.time).total);
     const groups = {};
     sorted.forEach(m => {
-      const timeInfo = getTimeVal(m.time);
-      const hours = timeInfo.hours;
-      const ampm = hours >= 12 ? 'PM' : 'AM';
-      const displayHour = hours % 12 || 12;
-      const hourLabel = `${displayHour}:00 ${ampm}`;
+      const { hours = 0 } = getTimeVal(m.time);
+      const ampm          = hours >= 12 ? 'PM' : 'AM';
+      const displayHour   = hours % 12 || 12;
+      const hourLabel     = `${displayHour}:00 ${ampm}`;
       if (!groups[hourLabel]) groups[hourLabel] = [];
       groups[hourLabel].push(m);
     });
@@ -133,9 +227,6 @@ const MainSched = ({ triggerToast, sidebarOpen = true }) => {
         scheduleData={viewingSchedule} 
         onBack={() => setViewingSchedule(null)} 
         onEdit={() => setIsCreating(true)} 
-        // FIX: onAddMinutes is no longer needed here — ViewSched.js handles
-        // its own navigation to /minutesinfo with the correct scheduleData.
-        // Leaving the prop out means ViewSched will use its internal handleAddMinutes.
       />
     );
   }
@@ -149,7 +240,14 @@ const MainSched = ({ triggerToast, sidebarOpen = true }) => {
       <div className="schedule-header">
         <div className="header-left">
           {isCreating && (
-            <button className="back-circle-btn" onClick={() => setIsCreating(false)}>
+            <button className="back-circle-btn" onClick={() => {
+              setIsCreating(false);
+              setViewingSchedule(null);
+              if (returnToLog) {
+                setReturnToLog(false);
+                setShowLog(true);
+              }
+            }}>
               <FaArrowLeft />
             </button>
           )}
@@ -170,14 +268,26 @@ const MainSched = ({ triggerToast, sidebarOpen = true }) => {
           <DetailedScheduleForm 
             hideHeader={true} 
             initialData={viewingSchedule}
+            returnToActivityLog={returnToLog}
             onSuccess={(updatedData) => {
               loadMeetings();
               setIsCreating(false);
-              if (viewingSchedule) {
+              setViewingSchedule(null);
+              if (returnToLog) {
+                setReturnToLog(false);
+                setShowLog(true);
+              } else if (viewingSchedule) {
                 setViewingSchedule(updatedData);
               }
             }}
-            onCancel={() => setIsCreating(false)}
+            onCancel={() => {
+              setIsCreating(false);
+              setViewingSchedule(null);
+              if (returnToLog) {
+                setReturnToLog(false);
+                setShowLog(true);
+              }
+            }}
             onShowLog={() => setShowLog(true)} 
             triggerToast={triggerToast} 
           />
