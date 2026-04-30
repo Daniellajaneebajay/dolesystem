@@ -32,7 +32,7 @@ function Dashboard() {
   const onSelectingHearing = (e) => {
     const value = e.target.value;
     if (value !== "Select") {
-      navigate("/minutes", {
+      navigate("/minutesinfo", {
         state: {
           hearingNumber: value,
           party: selectedData.requestingParty,
