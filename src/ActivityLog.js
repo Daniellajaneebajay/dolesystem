@@ -1,13 +1,18 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom'; 
 import './ActivityLog.css';
-import { FaArrowLeft, FaEdit, FaHistory, FaListUl, FaEllipsisV, FaFileAlt, FaCommentDots, FaTrashAlt, FaArchive, FaTimesCircle } from 'react-icons/fa';
+import { 
+  FaArrowLeft, FaEdit, FaHistory, FaListUl, 
+  FaEllipsisV, FaFileAlt, FaCommentDots, FaTrashAlt,
+  FaArchive, FaTimesCircle
+} from 'react-icons/fa';
 
 const ActivityLog = ({ onBack }) => {
   const [logs, setLogs] = useState([]);
   const [viewMode, setViewMode] = useState('active'); 
   const [activeMenuId, setActiveMenuId] = useState(null); 
-  
+  const [now, setNow] = useState(new Date()); 
+
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [selectedHearing, setSelectedHearing] = useState(null);
   const [cancelReason, setCancelReason] = useState('');
@@ -16,6 +21,13 @@ const ActivityLog = ({ onBack }) => {
   const navigate = useNavigate();
   const dropdownRef = useRef(null);
 
+  // 1. Live Status Timer
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 30000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // 2. Click Outside Dropdown Logic
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -28,13 +40,52 @@ const ActivityLog = ({ onBack }) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [activeMenuId]);
 
+  // 3. Status Calculator
+  const getLiveStatus = useCallback((row) => {
+    if (row.status === 'Cancelled' || row.status === 'Done') return row.status;
+    try {
+      const monthsArr = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+      const year = row.year || now.getFullYear();
+      const monthIndex = monthsArr.indexOf(row.monthName);
+      const day = parseInt(row.day);
+      const [startStr, endStr] = row.time.split(' to ');
+
+      const parseTimeToDate = (timeStr) => {
+        const [time, modifier] = timeStr.split(' ');
+        let [hours, minutes] = time.split(':');
+        hours = parseInt(hours, 10);
+        if (modifier === 'PM' && hours !== 12) hours += 12;
+        if (modifier === 'AM' && hours === 12) hours = 0;
+        return new Date(year, monthIndex, day, hours, parseInt(minutes, 10), 0);
+      };
+
+      const startTime = parseTimeToDate(startStr);
+      const endTime = parseTimeToDate(endStr);
+
+      if (now >= startTime && now <= endTime) return "In Session";
+      else if (now < startTime) return "Pending";
+      else return "Finished";
+    } catch (error) {
+      return row.status || "Pending";
+    }
+  }, [now]);
+
+  // 4. Data Loading
   const loadLogs = useCallback(() => {
     const savedHearings = JSON.parse(localStorage.getItem('hearings')) || [];
     const savedMinutesFiles = JSON.parse(localStorage.getItem('allMinutesFiles')) || [];
     
     const processedLogs = [...savedHearings].sort((a, b) => b.id - a.id).map(hearing => {
-      const hasMinutes = savedMinutesFiles.some(m => m.hearingTitle === hearing.title);
-      return { ...hearing, hasMinutes };
+      const minuteFile = savedMinutesFiles.find(
+        m => m.hearingTitle === hearing.title || 
+             m.matter === hearing.title || 
+             String(m.linkedScheduleId) === String(hearing.id)
+      );
+      return { 
+        ...hearing, 
+        hasMinutes: !!minuteFile, 
+        minuteId: minuteFile ? minuteFile.id : null 
+      };
     });
     
     if (viewMode === 'active') {
@@ -54,20 +105,20 @@ const ActivityLog = ({ onBack }) => {
     loadLogs();
   }, [loadLogs]);
 
-  useEffect(() => {
-    const handleStorageChange = (e) => {
-      if (e.key === 'allMinutesFiles' || e.key === 'hearings') {
-        loadLogs();
-      }
-    };
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, [loadLogs]);
-
+  // 5. Action Handlers
   const handleToggleMenu = (e, id) => {
     e.preventDefault();
     e.stopPropagation();
     setActiveMenuId(prevId => (prevId === id ? null : id));
+  };
+
+  const handleArchive = (id) => {
+    const saved = JSON.parse(localStorage.getItem('hearings')) || [];
+    const updated = saved.map(h => h.id === id ? { ...h, status: 'Done' } : h);
+    localStorage.setItem('hearings', JSON.stringify(updated));
+    window.dispatchEvent(new Event('storage'));
+    loadLogs();
+    setActiveMenuId(null);
   };
 
   const handleDelete = (id) => {
@@ -75,17 +126,10 @@ const ActivityLog = ({ onBack }) => {
       const saved = JSON.parse(localStorage.getItem('hearings')) || [];
       const updated = saved.filter(h => h.id !== id);
       localStorage.setItem('hearings', JSON.stringify(updated));
+      window.dispatchEvent(new Event('storage'));
       loadLogs();
       setActiveMenuId(null);
     }
-  };
-
-  const handleArchive = (id) => {
-    const saved = JSON.parse(localStorage.getItem('hearings')) || [];
-    const updated = saved.map(h => h.id === id ? { ...h, status: 'Done' } : h);
-    localStorage.setItem('hearings', JSON.stringify(updated));
-    loadLogs();
-    setActiveMenuId(null);
   };
 
   const openCancelModal = (hearing) => {
@@ -99,13 +143,53 @@ const ActivityLog = ({ onBack }) => {
     if (!finalReason) return alert("Please select a reason.");
     const saved = JSON.parse(localStorage.getItem('hearings')) || [];
     const updated = saved.map(h => 
-      h.id === selectedHearing.id ? { ...h, status: 'Cancelled', cancelReason: finalReason } : h
+      h.id === selectedHearing.id 
+        ? { ...h, status: 'Cancelled', cancelReason: finalReason } 
+        : h
     );
     localStorage.setItem('hearings', JSON.stringify(updated));
+    window.dispatchEvent(new Event('storage'));
     setShowCancelModal(false);
     setCancelReason('');
     setOtherReason('');
     loadLogs();
+  };
+
+  // FIXED: Edit navigates to /schedule with returnToSchedule state.
+  // MainSched's useEffect watches for location.state.returnToSchedule and
+  // opens ViewSched, then the Edit button inside ViewSched opens Schedule form
+  // pre-filled with all hearing data (title, parties, time, date, officer, etc.)
+  const handleEdit = (row) => {
+    navigate('/schedule', {
+      state: {
+        returnToSchedule: row   // MainSched picks this up and sets viewingSchedule = row
+      }
+    });
+  };
+
+  // FIXED: Minutes button uses /minutesinfo (correct route) with state
+  const handleViewMinutes = (row) => {
+    if (row.status === 'Cancelled') return;
+
+    if (row.minuteId) {
+      // Existing minute — open it with fileId in state, back arrow goes to /schedule
+      navigate('/minutesinfo', { 
+        state: { 
+          fileId: row.minuteId,
+          returnToActivityLog: true,
+          scheduleId: row.id
+        } 
+      });
+    } else {
+      // No minute yet — create new one pre-populated from hearing data
+      navigate('/minutesinfo', { 
+        state: { 
+          initialData: row,
+          returnToActivityLog: true,
+          scheduleId: row.id
+        } 
+      });
+    }
   };
 
   return (
@@ -144,10 +228,22 @@ const ActivityLog = ({ onBack }) => {
       )}
 
       <div className="log-header-section">
-        <button className="back-button" onClick={onBack}><FaArrowLeft /> Activity Log</button>
+        <button className="back-button" onClick={onBack}>
+          <FaArrowLeft /> Activity Log
+        </button>
         <div className="view-toggle-container">
-          <button className={`toggle-btn ${viewMode === 'active' ? 'active' : ''}`} onClick={() => setViewMode('active')}><FaListUl /> Active</button>
-          <button className={`toggle-btn ${viewMode === 'archived' ? 'active' : ''}`} onClick={() => setViewMode('archived')}><FaHistory /> Archives</button>
+          <button 
+            className={`toggle-btn ${viewMode === 'active' ? 'active' : ''}`} 
+            onClick={() => setViewMode('active')}
+          >
+            <FaListUl /> Active
+          </button>
+          <button 
+            className={`toggle-btn ${viewMode === 'archived' ? 'active' : ''}`} 
+            onClick={() => setViewMode('archived')}
+          >
+            <FaHistory /> Archives
+          </button>
         </div>
       </div>
 
@@ -167,67 +263,90 @@ const ActivityLog = ({ onBack }) => {
             </thead>
             <tbody>
               {logs.length > 0 ? (
-                logs.map((row, index) => (
-                  <tr key={row.id}>
-                    <td className="col-no">{index + 1}</td>
-                    <td className="col-officer"><strong>{row.officer}</strong></td>
-                    <td className="col-date">{row.date}</td>
-                    <td className="col-time">{row.time}</td>
-                    <td className="col-purpose">{row.title}</td>
-                    <td className="col-status">
-                      <span className={`status-pill ${row.status?.toLowerCase() || 'pending'}`}>
-                        {row.status || 'Pending'}
-                      </span>
-                    </td>
-                    <td className="col-action">
-                      {viewMode === 'active' ? (
-                        <div className="active-action-group">
-                          <button 
-                            className="arch-btn edit" 
-                            title="Edit"
-                            onClick={() => navigate('/schedule-form', { state: { editId: row.id } })}
-                          >
-                            <FaEdit />
-                          </button>
-                          
-                          <div className="dot-menu-container">
+                logs.map((row, index) => {
+                  const currentStatus = getLiveStatus(row);
+                  return (
+                    <tr key={row.id}>
+                      <td className="col-no">{index + 1}</td>
+                      <td className="col-officer"><strong>{row.officer}</strong></td>
+                      <td className="col-date">{row.date}</td>
+                      <td className="col-time">{row.time}</td>
+                      <td className="col-purpose">{row.title}</td>
+                      <td className="col-status">
+                        <span className={`status-pill ${currentStatus.toLowerCase().replace(/\s+/g, '-')}`}>
+                          {currentStatus}
+                        </span>
+                      </td>
+                      <td className="col-action">
+                        {viewMode === 'active' ? (
+                          <div className="active-action-group">
+                            {/* FIXED: was navigate('/schedule-form', ...) — route doesn't exist.
+                                Now navigates to /schedule with returnToSchedule state so
+                                MainSched opens ViewSched → user clicks Edit → Schedule form
+                                pre-filled with all hearing details */}
                             <button 
-                              className="opt-btn-trigger" 
-                              onClick={(e) => handleToggleMenu(e, row.id)}
+                              className="arch-btn edit" 
+                              title="Edit" 
+                              onClick={() => handleEdit(row)}
                             >
-                              <FaEllipsisV />
+                              <FaEdit />
                             </button>
-                            
-                            {activeMenuId === row.id && (
-                              <div className="dropdown-menu show" ref={dropdownRef}>
-                                <button onClick={() => handleArchive(row.id)} className="drop-item archive"><FaArchive /> Archive</button>
-                                <button onClick={() => openCancelModal(row)} className="drop-item cancel"><FaTimesCircle /> Cancel</button>
-                                <button onClick={() => handleDelete(row.id)} className="drop-item delete"><FaTrashAlt /> Delete</button>
-                              </div>
-                            )}
+                            <div className="dot-menu-container">
+                              <button 
+                                className="opt-btn-trigger" 
+                                onClick={(e) => handleToggleMenu(e, row.id)}
+                              >
+                                <FaEllipsisV />
+                              </button>
+                              {activeMenuId === row.id && (
+                                <div className="dropdown-menu show" ref={dropdownRef}>
+                                  <button onClick={() => handleArchive(row.id)} className="drop-item archive">
+                                    <FaArchive /> Archive
+                                  </button>
+                                  <button onClick={() => openCancelModal(row)} className="drop-item cancel">
+                                    <FaTimesCircle /> Cancel
+                                  </button>
+                                  <button onClick={() => handleDelete(row.id)} className="drop-item delete">
+                                    <FaTrashAlt /> Delete
+                                  </button>
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      ) : (
-                        <div className="archive-actions-group">
-                          <button className="arch-btn remark" title="View Remarks" onClick={() => navigate(`/remarks/${row.id}`)}><FaCommentDots /></button>
-                          
-                          <button 
-                            className={`arch-btn minutes ${row.hasMinutes ? 'exists' : 'empty'} ${row.status === 'Cancelled' ? 'disabled' : ''}`} 
-                            onClick={() => row.status !== 'Cancelled' && navigate('/minutes')}
-                            disabled={row.status === 'Cancelled'}
-                            title={row.status === 'Cancelled' ? "Minutes unavailable" : "View Minutes"}
-                          >
-                            <FaFileAlt />
-                          </button>
-
-                          <button className="arch-btn delete" title="Delete" onClick={() => handleDelete(row.id)}><FaTrashAlt /></button>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))
+                        ) : (
+                          <div className="archive-actions-group">
+                            <button 
+                              className="arch-btn remark" 
+                              title="View Remarks" 
+                              onClick={() => navigate(`/remarks/${row.id}`)}
+                            >
+                              <FaCommentDots />
+                            </button>
+                            <button 
+                              className={`arch-btn minutes ${row.hasMinutes ? 'exists' : 'empty'} ${row.status === 'Cancelled' ? 'disabled' : ''}`} 
+                              onClick={() => handleViewMinutes(row)} 
+                              disabled={row.status === 'Cancelled'}
+                              title={row.hasMinutes ? "View Minutes" : "Create Minutes"}
+                            >
+                              <FaFileAlt />
+                            </button>
+                            <button 
+                              className="arch-btn delete" 
+                              title="Delete" 
+                              onClick={() => handleDelete(row.id)}
+                            >
+                              <FaTrashAlt />
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
               ) : (
-                <tr><td colSpan="7" className="empty-msg">No {viewMode} records found.</td></tr>
+                <tr>
+                  <td colSpan="7" className="empty-msg">No {viewMode} records found.</td>
+                </tr>
               )}
             </tbody>
           </table>

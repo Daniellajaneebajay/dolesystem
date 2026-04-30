@@ -1,3 +1,6 @@
+/* MinutesInfo.css */
+
+/* --- 1. MAIN LAYOUT & APP UI --- */
 .min-info-container {
     background-color: #f8fafc;
     min-height: 100vh;
@@ -8,6 +11,7 @@
     box-sizing: border-box;
 }
 
+/* Fix: Strip min-height when generating PDF to prevent blank page 2 */
 .min-info-container.pdf-mode {
     min-height: unset !important;
     height: auto !important;
@@ -63,6 +67,7 @@
     transform: translateX(-3px);
 }
 
+/* Pagination pills */
 .pagination-container {
     display: flex;
     align-items: center;
@@ -109,6 +114,7 @@
     color: #030a49;
 }
 
+/* --- 2. INPUT FIELDS & ALIGNMENT --- */
 .top-fields {
     display: grid;
     grid-template-columns: 2fr 1fr 1fr;
@@ -130,31 +136,21 @@
     letter-spacing: 0.8px;
 }
 
-/* RENAMED TO PREVENT CLASHING WITH SCHEDULE.CSS */
-.min-input-field {
+input[type="text"], 
+input[type="date"], 
+input[type="time"], 
+input[type="number"],
+textarea, 
+select {
     border: 1.5px solid #e2e8f0;
     border-radius: 12px;
     padding: 14px;
     background: #f8fafc;
     width: 100%;
-    font-size: 0.95rem;
+    font-size: 12px;
     color: #1e293b;
     transition: all 0.3s ease;
     box-sizing: border-box;
-    outline: none;
-    font-family: 'Inter', sans-serif;
-}
-
-.min-input-field:focus {
-    border-color: #03113d; /* Matches the DOLE dark blue theme */
-    background: white;
-    box-shadow: 0 0 0 4px rgba(3, 17, 61, 0.05);
-}
-
-/* Specific styling for the textarea in MinutesInfo */
-textarea.min-input-field {
-    min-height: 120px;
-    resize: vertical;
 }
 
 input:focus, textarea:focus, select:focus {
@@ -180,7 +176,9 @@ input:focus, textarea:focus, select:focus {
     box-shadow: none !important;
 }
 
-.appearance-section, .minutes-section {
+/* --- 3. SECTIONS --- */
+.appearance-section, 
+.minutes-section {
     border: 1px solid #f1f5f9;
     background: #ffffff;
     border-radius: 20px;
@@ -191,7 +189,8 @@ input:focus, textarea:focus, select:focus {
     box-sizing: border-box;
 }
 
-.appearance-section h3, .minutes-section h3 {
+.appearance-section h3, 
+.minutes-section h3 {
     font-size: 1.15rem;
     color: #030a49;
     margin: 0;
@@ -260,6 +259,7 @@ input:focus, textarea:focus, select:focus {
     gap: 8px;
 }
 
+/* --- 4. MINUTES & CONCERNS --- */
 .section-title-row {
     display: flex;
     justify-content: space-between;
@@ -283,6 +283,7 @@ textarea {
     width: 100%;
 }
 
+/* --- 5. ACTION BUTTONS & STATUS --- */
 .form-bottom {
     display: flex;
     justify-content: space-between;
@@ -335,6 +336,7 @@ textarea {
     gap: 8px;
 }
 
+/* --- 6. MODALS --- */
 .preview-modal-overlay {
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;
@@ -374,12 +376,7 @@ button.btn-close-preview {
     justify-content: center;
 }
 
-.preview-iframe { 
-    flex: 1; 
-    border: 1px solid #e2e8f0; 
-    border-radius: 12px; 
-    margin: 15px 0; 
-}
+.preview-iframe { flex: 1; border: 1px solid #e2e8f0; border-radius: 12px; margin: 15px 0; }
 
 .btn-confirm-download {
     background: #10b981;
@@ -399,9 +396,8 @@ button.btn-back-edit {
     border-radius: 10px;
 }
 
-.pdf-only-header { 
-    display: none; 
-}
+/* --- 7. PDF SPECIFIC STYLING --- */
+.pdf-only-header { display: none; }
 
 .is-generating-pdf {
     padding: 20px !important;
@@ -410,9 +406,10 @@ button.btn-back-edit {
     box-shadow: none !important;
     font-family: "Times New Roman", Times, serif !important;
     color: black !important;
-    min-height: unset !important; 
+    min-height: unset !important; /* Fix for blank page 2 */
 }
 
+/* Centered formal header */
 .is-generating-pdf .pdf-only-header {
     display: block !important;
     text-align: center;
@@ -461,6 +458,7 @@ button.btn-back-edit {
     border-right: none;
 }
 
+/* Dynamic Text Styling for PDF */
 .pdf-dynamic-text {
     display: none;
     white-space: pre-wrap;
@@ -485,20 +483,4 @@ button.btn-back-edit {
     padding: 0 !important;
     margin: 0 !important;
     box-shadow: none !important;
-}
-
-.min-info-container input[readonly],
-.min-info-container textarea[readonly] {
-    cursor: default;
-    background: #f8fafc;
-    padding: 16px;
-    border-radius: 14px;
-}
-
-.min-info-container textarea[readonly] {
-    resize: none;
-}
-
-.min-info-container button {
-    transition: none;
 }
