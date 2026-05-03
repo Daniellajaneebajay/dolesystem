@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import "./App.css";
 
 const officers = [
@@ -13,13 +13,29 @@ const officers = [
 
 function Dashboard() {
   const navigate = useNavigate();
+  const location = useLocation();
+
   const [showModal, setShowModal] = useState(false);
   const [selectedData, setSelectedData] = useState(null);
+
+  // -------------------------------------------------------------------
+  // FIX: When MinutesInfo back button sends us back here, it passes
+  // returnToDashboard + the original modal data so we can re-open the
+  // modal exactly as it was when the user left.
+  // -------------------------------------------------------------------
+  useEffect(() => {
+    if (location.state?.returnToDashboard && location.state?.modalData) {
+      setSelectedData(location.state.modalData);
+      setShowModal(true);
+      // Clear state so refreshing the page doesn't re-trigger this
+      navigate('/', { replace: true, state: {} });
+    }
+  }, [location.state, navigate]);
 
   const handleRowClick = (time, topic, hearingType = "1st Hearing") => {
     if (topic.includes("Hearing") || topic.includes("Session")) {
       setSelectedData({
-        time: time,
+        time,
         hearingTitle: hearingType,
         requestingParty: "Lisa Manoban",
         respondingParty: "Jungkook Jung",
@@ -31,20 +47,27 @@ function Dashboard() {
 
   const onSelectingHearing = (e) => {
     const value = e.target.value;
-    if (value !== "Select") {
-      navigate("/minutesinfo", {
-        state: {
-          hearingNumber: value,
-          party: selectedData.requestingParty,
-          case: selectedData.claims
-        }
-      });
-    }
+    if (value === "Select" || !value) return;
+
+    // FIX: Pass returnToDashboard + full modalData so MinutesInfo can
+    // send us back here and re-open the modal with the same data.
+    navigate("/minutesinfo", {
+      state: {
+        hearingNumber: value,
+        party: selectedData.requestingParty,
+        respondingParty: selectedData.respondingParty,
+        claims: selectedData.claims,
+        time: selectedData.time,
+        hearingTitle: selectedData.hearingTitle,
+        returnToDashboard: true,      // tells MinutesInfo back arrow to come here
+        modalData: selectedData       // full snapshot so modal can be restored
+      }
+    });
   };
 
   return (
     <div className="main-content">
-     
+
       {showModal && selectedData && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="details-modal" onClick={(e) => e.stopPropagation()}>
@@ -52,25 +75,24 @@ function Dashboard() {
               <h3 className="modal-title">More Details</h3>
               <button className="close-btn" onClick={() => setShowModal(false)}>×</button>
             </div>
-            
+
             <div className="hearing-header-row">
               <h2 className="hearing-count-title">{selectedData.hearingTitle}</h2>
-              
+
               {(selectedData.hearingTitle.includes("2nd") || selectedData.hearingTitle.includes("3rd")) && (
                 <div className="recent-filter">
                   <span>Recent: </span>
-                  
-                  <select className="modal-mini-select" onChange={onSelectingHearing}>
+                  <select className="modal-mini-select" onChange={onSelectingHearing} defaultValue="Select">
                     <option value="Select">Select</option>
                     <option value="1st Hearing">1st Hearing</option>
                     {selectedData.hearingTitle.includes("3rd") && (
-                       <option value="2nd Hearing">2nd Hearing</option>
+                      <option value="2nd Hearing">2nd Hearing</option>
                     )}
                   </select>
                 </div>
               )}
             </div>
-            
+
             <div className="modal-body-content">
               <div className="detail-item">
                 <label className="detail-label">Time</label>
@@ -112,8 +134,8 @@ function Dashboard() {
       <div className="blue-grid-container">
         <div className="officer-grid">
           {officers.map((officer, index) => {
-            const isAvailable = officer.status === "Available";
-            const statusColor = isAvailable ? "#28a745" : "#cc0000";
+            const isAvailable  = officer.status === "Available";
+            const statusColor  = isAvailable ? "#28a745" : "#cc0000";
 
             return (
               <div key={index} className="officer-card">
@@ -121,15 +143,12 @@ function Dashboard() {
                   <div className="avatar-wrapper" style={{ borderColor: statusColor }}>
                     <img src={officer.image} alt={officer.name} />
                   </div>
-
                   <div className="name-details">
                     <h4>{officer.name}</h4>
                     <p>{officer.position}</p>
                     <div className="status-text">
                       <span className="status-dot" style={{ backgroundColor: statusColor }}></span>
-                      <span style={{ color: statusColor, fontWeight: "bold" }}>
-                        {officer.status}
-                      </span>
+                      <span style={{ color: statusColor, fontWeight: "bold" }}>{officer.status}</span>
                     </div>
                   </div>
                   <div className="rfa-count">RFA: {officer.rfa}</div>
@@ -176,7 +195,7 @@ function Dashboard() {
             );
           })}
         </div>
-        
+
         <div className="pagination-dots">
           <span className="dot active"></span>
           <span className="dot"></span>

@@ -62,7 +62,7 @@ const MinutesInfo = () => {
   const buildDateFromSchedule = (scheduleData) => {
     if (scheduleData?.year && scheduleData?.monthName && scheduleData?.day) {
       const monthIndex = new Date(Date.parse(scheduleData.monthName + " 1, 2000")).getMonth();
-      const dateObj = new Date(parseInt(scheduleData.year), monthIndex, parseInt(scheduleData.day));
+      const dateObj    = new Date(parseInt(scheduleData.year), monthIndex, parseInt(scheduleData.day));
       return dateObj.toISOString().split('T')[0];
     }
     if (scheduleData?.date) {
@@ -72,10 +72,20 @@ const MinutesInfo = () => {
     return new Date().toISOString().split('T')[0];
   };
 
+  // -------------------------------------------------------------------
+  // Load Logic
+  // Priority:
+  // 1. Existing minute record (fileId !== 'new') → load saved data
+  // 2. Coming from Dashboard (location.state.returnToDashboard exists
+  //    AND hearingNumber present) → pre-fill from Dashboard state
+  // 3. Coming from ViewSched/ActivityLog (location.state.initialData) → pre-populate
+  // 4. Fallback → blank form
+  // -------------------------------------------------------------------
   useEffect(() => {
     const allFiles    = JSON.parse(localStorage.getItem('allMinutesFiles')) || [];
     const allHearings = JSON.parse(localStorage.getItem('hearings')) || [];
 
+    // --- 1. Existing record ---
     if (fileId !== 'new') {
       const currentFile = allFiles.find(f => String(f.id) === String(fileId));
       if (currentFile) {
@@ -113,22 +123,45 @@ const MinutesInfo = () => {
       }
     }
 
+    // --- 2. FIX: Coming from Dashboard → pre-fill from hearing number + party/claims ---
+    if (location.state?.returnToDashboard && location.state?.hearingNumber) {
+      const { hearingNumber, party, respondingParty, claims, time } = location.state;
+      setCaseData({
+        docketNo: "",
+        matter:   claims || ""
+      });
+      setConferences([{
+        date:               new Date().toISOString().split('T')[0],
+        time:               formatTo24Hour(time?.split(' - ')[0]?.trim() || ""),
+        requestingParties:  formatParties(party),
+        respondingParties:  formatParties(respondingParty),
+        concerns:           "",
+        status:             "Pending",
+        paymentType:        "",
+        amountPaid:         "0",
+        totalAmount:        ""
+      }]);
+      return;
+    }
+
+    // --- 3. Coming from ViewSched / ActivityLog ---
     if (location.state?.initialData) {
       const passedData = location.state.initialData;
       const rawTime    = passedData.time?.split(' to ')[0]?.trim() || passedData.time || "";
       setCaseData({ docketNo: "", matter: passedData.title || "" });
       setConferences([{
-        date: buildDateFromSchedule(passedData),
-        time: formatTo24Hour(rawTime),
+        date:              buildDateFromSchedule(passedData),
+        time:              formatTo24Hour(rawTime),
         requestingParties: formatParties(passedData.requestingParty),
         respondingParties: formatParties(passedData.respondingParty),
-        concerns: "",
-        status: "Pending",
-        paymentType: "",
-        amountPaid: "0",
-        totalAmount: ""
+        concerns:          "",
+        status:            "Pending",
+        paymentType:       "",
+        amountPaid:        "0",
+        totalAmount:       ""
       }]);
     }
+    // else: blank form (default state)
   }, [fileId]);
 
   const currentConf            = conferences[currentStep - 1] || {};
@@ -143,17 +176,25 @@ const MinutesInfo = () => {
 
   // -------------------------------------------------------------------
   // Back Navigation
-  //
   // Priority:
-  // 1. returnToArchives  → go to /schedule with openLogInArchives flag
-  //                        MainSched will open ActivityLog in 'archived' tab
-  // 2. returnToActivityLog → go to /schedule with openLog flag
-  //                        MainSched will open ActivityLog in 'active' tab
-  // 3. returnToMinutes   → go to /minutes
-  // 4. Came from ViewSched → go back to that ViewSched
-  // 5. Fallback          → /minutes
+  // 1. returnToDashboard → go to '/' with returnToDashboard + modalData
+  //                        Dashboard useEffect re-opens the modal
+  // 2. returnToArchives  → /schedule with openLogInArchives flag
+  // 3. returnToActivityLog → /schedule with openLog flag
+  // 4. returnToMinutes   → /minutes
+  // 5. Came from ViewSched → returnToSchedule
+  // 6. Fallback          → /minutes
   // -------------------------------------------------------------------
   const handleBackNavigation = () => {
+    if (location.state?.returnToDashboard) {
+      navigate('/', {
+        state: {
+          returnToDashboard: true,
+          modalData: location.state.modalData  // restore the exact modal state
+        }
+      });
+      return;
+    }
     if (location.state?.returnToArchives) {
       navigate('/schedule', { state: { openLogInArchives: true } });
       return;
@@ -187,6 +228,7 @@ const MinutesInfo = () => {
   // -------------------------------------------------------------------
   const handleSave = () => {
     const allMinutes          = JSON.parse(localStorage.getItem('allMinutesFiles')) || [];
+    const returnToDashboard   = location.state?.returnToDashboard;
     const returnToArchives    = location.state?.returnToArchives;
     const returnToActivityLog = location.state?.returnToActivityLog;
     const returnToMinutes     = location.state?.returnToMinutes;
@@ -221,14 +263,14 @@ const MinutesInfo = () => {
 
     const newEntry = {
       id: actualId,
-      docketNo: caseData.docketNo,
-      matter: caseData.matter,
+      docketNo:     caseData.docketNo,
+      matter:       caseData.matter,
       hearingTitle: caseData.matter,
-      officer: officerName,
-      timestamp: new Date().toISOString(),
-      status: currentConf.status || "Pending",
+      officer:      officerName,
+      timestamp:    new Date().toISOString(),
+      status:       currentConf.status || "Pending",
       conferences,
-      selected: false,
+      selected:         false,
       linkedScheduleId
     };
 
@@ -242,11 +284,17 @@ const MinutesInfo = () => {
     toast.success("Minutes saved successfully!", {
       autoClose: 1500,
       onClose: () => {
-        if (returnToArchives) {
-          // Return to ActivityLog open on Archives tab
+        if (returnToDashboard) {
+          // FIX: After saving, go back to Dashboard and re-open the modal
+          navigate('/', {
+            state: {
+              returnToDashboard: true,
+              modalData: location.state.modalData
+            }
+          });
+        } else if (returnToArchives) {
           navigate('/schedule', { state: { openLogInArchives: true } });
         } else if (returnToActivityLog) {
-          // Return to ActivityLog open on Active tab
           navigate('/schedule', { state: { openLog: true } });
         } else if (returnToMinutes) {
           navigate('/minutes');
@@ -335,17 +383,17 @@ const MinutesInfo = () => {
   };
 
   const handlePreviewPDF = () => {
-    const element    = document.getElementById('pdf-content');
+    const element      = document.getElementById('pdf-content');
     setIsGeneratingPdf(true);
     const safeDocketNo = caseData.docketNo
       ? caseData.docketNo.replace(/[/\\?%*:|"<>]/g, '-')
       : 'Draft';
     const opt = {
-      margin: [10, 10, 10, 10],
-      filename: `Minutes_${safeDocketNo}_S${currentStep}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      margin:     [10, 10, 10, 10],
+      filename:   `Minutes_${safeDocketNo}_S${currentStep}.pdf`,
+      image:      { type: 'jpeg', quality: 0.98 },
+      html2canvas:{ scale: 2, useCORS: true, scrollY: 0 },
+      jsPDF:      { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
     setTimeout(() => {
       html2pdf().set(opt).from(element).outputPdf('blob').then((blob) => {
@@ -376,11 +424,11 @@ const MinutesInfo = () => {
             date: "", time: "",
             requestingParties: [...lastConf.requestingParties],
             respondingParties: [...lastConf.respondingParties],
-            concerns: "",
-            status: lastConf.status,
-            paymentType: lastConf.paymentType,
-            amountPaid: "0",
-            totalAmount: lastConf.totalAmount
+            concerns:     "",
+            status:       lastConf.status,
+            paymentType:  lastConf.paymentType,
+            amountPaid:   "0",
+            totalAmount:  lastConf.totalAmount
           }]);
           setCurrentStep(conferences.length + 1);
           setIsModalOpen(false);
@@ -468,12 +516,8 @@ const MinutesInfo = () => {
             <h2 className="title-text">DOLE - SENA (Minutes)</h2>
             {!isGeneratingPdf && (
               <div style={{ display: 'flex', gap: '10px' }}>
-                <button
-                  className="btn-new-conf"
-                  onClick={() => setIsModalOpen(true)}
-                  disabled={isFullyPaid}
-                  style={{ opacity: isFullyPaid ? 0.5 : 1, cursor: isFullyPaid ? 'not-allowed' : 'pointer' }}
-                >
+                <button className="btn-new-conf" onClick={() => setIsModalOpen(true)} disabled={isFullyPaid}
+                  style={{ opacity: isFullyPaid ? 0.5 : 1, cursor: isFullyPaid ? 'not-allowed' : 'pointer' }}>
                   <FaPlus /> New Session
                 </button>
                 <button className="btn-delete-row" style={{ background: '#fee2e2', color: '#b91c1c' }} onClick={handleDeleteSession}>
@@ -486,11 +530,7 @@ const MinutesInfo = () => {
             <div className="pagination-container">
               <span className="nav-arrow" onClick={() => setCurrentStep(prev => Math.max(1, prev - 1))}>‹</span>
               {conferences.map((_, i) => (
-                <span
-                  key={i}
-                  className={`page-num ${currentStep === i + 1 ? 'active' : ''}`}
-                  onClick={() => setCurrentStep(i + 1)}
-                >
+                <span key={i} className={`page-num ${currentStep === i + 1 ? 'active' : ''}`} onClick={() => setCurrentStep(i + 1)}>
                   {i + 1}
                 </span>
               ))}
@@ -528,14 +568,10 @@ const MinutesInfo = () => {
                 <div key={i} className="input-row">
                   <span className="row-num">{i + 1}.</span>
                   <input type="text" value={name} onChange={(e) => updateParty('requestingParties', i, e.target.value)} style={pdfInputStyle} placeholder="Full name" />
-                  {!isGeneratingPdf && (
-                    <button className="btn-delete-row" onClick={() => deletePartyRow('requestingParties', i)}><FaTrash size={12} /></button>
-                  )}
+                  {!isGeneratingPdf && <button className="btn-delete-row" onClick={() => deletePartyRow('requestingParties', i)}><FaTrash size={12} /></button>}
                 </div>
               ))}
-              {!isGeneratingPdf && (
-                <button className="add-name-btn" onClick={() => addPartyRow('requestingParties')}><FaPlus /> Add Name</button>
-              )}
+              {!isGeneratingPdf && <button className="add-name-btn" onClick={() => addPartyRow('requestingParties')}><FaPlus /> Add Name</button>}
             </div>
             <div className="column">
               <h4>RESPONDING PARTY</h4>
@@ -543,14 +579,10 @@ const MinutesInfo = () => {
                 <div key={i} className="input-row">
                   <span className="row-num">{i + 1}.</span>
                   <input type="text" value={name} onChange={(e) => updateParty('respondingParties', i, e.target.value)} style={pdfInputStyle} placeholder="Full name" />
-                  {!isGeneratingPdf && (
-                    <button className="btn-delete-row" onClick={() => deletePartyRow('respondingParties', i)}><FaTrash size={12} /></button>
-                  )}
+                  {!isGeneratingPdf && <button className="btn-delete-row" onClick={() => deletePartyRow('respondingParties', i)}><FaTrash size={12} /></button>}
                 </div>
               ))}
-              {!isGeneratingPdf && (
-                <button className="add-name-btn" onClick={() => addPartyRow('respondingParties')}><FaPlus /> Add Name</button>
-              )}
+              {!isGeneratingPdf && <button className="add-name-btn" onClick={() => addPartyRow('respondingParties')}><FaPlus /> Add Name</button>}
             </div>
           </div>
         </div>
@@ -558,9 +590,7 @@ const MinutesInfo = () => {
         <div className="minutes-section">
           <div className="section-title-row">
             <h3>MINUTES OF CONFERENCE (SESSION {currentStep})</h3>
-            {!isGeneratingPdf && (
-              <button className="btn-payment" onClick={() => setIsPaymentModalOpen(true)}>Payment Terms</button>
-            )}
+            {!isGeneratingPdf && <button className="btn-payment" onClick={() => setIsPaymentModalOpen(true)}>Payment Terms</button>}
           </div>
           {!isGeneratingPdf ? (
             <textarea placeholder="Issues and Concerns..." value={currentConf?.concerns} onChange={(e) => updateConfField('concerns', e.target.value)} rows="6" />
