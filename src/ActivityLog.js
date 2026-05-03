@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom'; 
-import { FaArrowLeft, FaEdit, FaHistory, FaListUl, FaEllipsisV, FaFileAlt, FaCommentDots, FaTrashAlt,FaArchive, FaTimesCircle } from 'react-icons/fa';
 import './ActivityLog.css';
+import { 
+  FaArrowLeft, FaEdit, FaHistory, FaListUl, 
+  FaEllipsisV, FaFileAlt, FaCommentDots, FaTrashAlt,
+  FaArchive, FaTimesCircle
+} from 'react-icons/fa';
 
-// ---------------------------------------------------------------------------
-// Same status logic as MainSched — kept local to avoid import coupling.
-// Returns: "Pending" | "In Session" | "Finished" | "Cancelled" | "Done"
-// ---------------------------------------------------------------------------
 const computeLiveStatus = (hearing, now) => {
   if (hearing.status === 'Cancelled' || hearing.status === 'Done') return hearing.status;
 
@@ -42,9 +42,10 @@ const computeLiveStatus = (hearing, now) => {
   }
 };
 
-const ActivityLog = ({ onBack }) => {
+const ActivityLog = ({ onBack, initialViewMode }) => {
+  // FIX: Accept initialViewMode prop so MainSched can reopen this in 'archived' mode
   const [logs, setLogs] = useState([]);
-  const [viewMode, setViewMode] = useState('active'); 
+  const [viewMode, setViewMode] = useState(initialViewMode || 'active'); 
   const [activeMenuId, setActiveMenuId] = useState(null); 
   const [now, setNow] = useState(new Date()); 
 
@@ -56,7 +57,6 @@ const ActivityLog = ({ onBack }) => {
   const navigate = useNavigate();
   const dropdownRef = useRef(null);
 
-  // Tick every 30 s so status badges stay live
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 30000);
     return () => clearInterval(timer);
@@ -72,16 +72,10 @@ const ActivityLog = ({ onBack }) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [activeMenuId]);
 
-  // -------------------------------------------------------------------
-  // loadLogs — splits hearings into Active vs Archives using live status
-  //
-  // Active   = Pending | In Session   (meeting hasn't ended yet)
-  // Archives = Done | Cancelled | Finished  (ended or manually closed)
-  // -------------------------------------------------------------------
   const loadLogs = useCallback(() => {
-    const savedHearings    = JSON.parse(localStorage.getItem('hearings')) || [];
+    const savedHearings     = JSON.parse(localStorage.getItem('hearings')) || [];
     const savedMinutesFiles = JSON.parse(localStorage.getItem('allMinutesFiles')) || [];
-    const currentNow       = new Date();
+    const currentNow        = new Date();
 
     const processedLogs = [...savedHearings]
       .sort((a, b) => b.id - a.id)
@@ -91,23 +85,20 @@ const ActivityLog = ({ onBack }) => {
                m.matter === hearing.title ||
                String(m.linkedScheduleId) === String(hearing.id)
         );
-        // Compute the true live status for routing purposes
         const liveStatus = computeLiveStatus(hearing, currentNow);
         return { 
           ...hearing,
-          _liveStatus: liveStatus,   // used for tab routing below
+          _liveStatus: liveStatus,
           hasMinutes: !!minuteFile, 
           minuteId: minuteFile ? minuteFile.id : null 
         };
       });
 
     if (viewMode === 'active') {
-      // Active tab: only meetings that haven't ended yet
       setLogs(processedLogs.filter(h =>
         h._liveStatus === 'Pending' || h._liveStatus === 'In Session'
       ));
     } else {
-      // Archives tab: meetings that are done, cancelled, or whose time has passed
       setLogs(processedLogs.filter(h =>
         h._liveStatus === 'Done' ||
         h._liveStatus === 'Cancelled' ||
@@ -116,31 +107,18 @@ const ActivityLog = ({ onBack }) => {
     }
   }, [viewMode]);
 
-  useEffect(() => {
-    loadLogs();
-  }, [loadLogs]);
+  useEffect(() => { loadLogs(); }, [loadLogs]);
 
-  // Also reload when storage changes (e.g. MainSched promotes a hearing to Done)
   useEffect(() => {
     const onStorage = () => loadLogs();
     window.addEventListener('storage', onStorage);
     return () => window.removeEventListener('storage', onStorage);
   }, [loadLogs]);
 
-  // Re-run loadLogs on every tick so rows move between tabs live
-  useEffect(() => {
-    loadLogs();
-  }, [now, loadLogs]);
+  useEffect(() => { loadLogs(); }, [now, loadLogs]);
 
-  // -------------------------------------------------------------------
-  // getLiveStatus — used only for the displayed status pill in the table.
-  // Uses _liveStatus that was already computed during loadLogs.
-  // -------------------------------------------------------------------
   const getDisplayStatus = (row) => row._liveStatus || row.status || 'Pending';
 
-  // -------------------------------------------------------------------
-  // Action handlers
-  // -------------------------------------------------------------------
   const handleToggleMenu = (e, id) => {
     e.preventDefault();
     e.stopPropagation();
@@ -199,14 +177,21 @@ const ActivityLog = ({ onBack }) => {
     });
   };
 
+  // FIX: Pass returnToArchives: true when opening minutes from the Archives tab
+  // so MinutesInfo knows to come back here (in archived mode) on back press.
   const handleViewMinutes = (row) => {
     if (row.status === 'Cancelled') return;
+
+    const fromArchives = viewMode === 'archived';
 
     if (row.minuteId) {
       navigate('/minutesinfo', { 
         state: { 
           fileId: row.minuteId,
-          returnToActivityLog: true,
+          // Active tab goes back to ActivityLog in active mode
+          // Archives tab goes back to ActivityLog in archived mode
+          returnToActivityLog: !fromArchives,
+          returnToArchives: fromArchives,
           scheduleId: row.id
         } 
       });
@@ -214,7 +199,8 @@ const ActivityLog = ({ onBack }) => {
       navigate('/minutesinfo', { 
         state: { 
           initialData: row,
-          returnToActivityLog: true,
+          returnToActivityLog: !fromArchives,
+          returnToArchives: fromArchives,
           scheduleId: row.id
         } 
       });
@@ -340,7 +326,6 @@ const ActivityLog = ({ onBack }) => {
                           </div>
                         ) : (
                           <div className="archive-actions-group">
-
                             <button 
                               className={`arch-btn minutes ${row.hasMinutes ? 'exists' : 'empty'} ${row.status === 'Cancelled' ? 'disabled' : ''}`} 
                               onClick={() => handleViewMinutes(row)} 

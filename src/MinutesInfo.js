@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { FaArrowLeft, FaPlus, FaTrash, FaDownload, FaTimes, FaCheckSquare, FaSquare, FaExclamationCircle, FaSave } from 'react-icons/fa';
+import { 
+  FaArrowLeft, FaPlus, FaTrash, FaDownload, 
+  FaTimes, FaCheckSquare, FaSquare, FaExclamationCircle, FaSave 
+} from 'react-icons/fa';
+import html2pdf from 'html2pdf.js';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import html2pdf from 'html2pdf.js';
+
 import ConfirmationModal from './ConfirmationModal';
 import './MinutesInfo.css';
 
@@ -11,7 +15,6 @@ const MinutesInfo = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // fileId: 'new' for brand-new records, or an existing record's id
   const fileId = location.state?.fileId || 'new';
 
   const [currentStep, setCurrentStep] = useState(1);
@@ -35,22 +38,19 @@ const MinutesInfo = () => {
     totalAmount: ""
   }]);
 
-  // Helper: parse comma-separated or array party data into array of at least 3 slots
   const formatParties = (partyData) => {
     if (!partyData) return ["", "", ""];
     const names = typeof partyData === 'string'
       ? partyData.split(',').map(n => n.trim()).filter(n => n !== "")
       : Array.isArray(partyData) ? partyData.filter(n => n && n.trim() !== "") : [partyData];
-    // Ensure at least 3 rows
     while (names.length < 3) names.push("");
     return names;
   };
 
-  // Helper: convert "9:00 AM" → "09:00"
   const formatTo24Hour = (timeStr) => {
     if (!timeStr) return "";
     const match = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
-    if (!match) return timeStr; // already in 24h or unknown format
+    if (!match) return timeStr;
     let hours = parseInt(match[1]);
     const minutes = match[2];
     const modifier = match[3].toUpperCase();
@@ -59,14 +59,12 @@ const MinutesInfo = () => {
     return `${String(hours).padStart(2, '0')}:${minutes}`;
   };
 
-  // Helper: build ISO date string (YYYY-MM-DD) from schedule's year/monthName/day fields
   const buildDateFromSchedule = (scheduleData) => {
     if (scheduleData?.year && scheduleData?.monthName && scheduleData?.day) {
       const monthIndex = new Date(Date.parse(scheduleData.monthName + " 1, 2000")).getMonth();
       const dateObj = new Date(parseInt(scheduleData.year), monthIndex, parseInt(scheduleData.day));
       return dateObj.toISOString().split('T')[0];
     }
-    // Fallback: try to parse scheduleData.date string directly
     if (scheduleData?.date) {
       const parsed = new Date(scheduleData.date);
       if (!isNaN(parsed)) return parsed.toISOString().split('T')[0];
@@ -74,49 +72,35 @@ const MinutesInfo = () => {
     return new Date().toISOString().split('T')[0];
   };
 
-  // --- Load Logic ---
-  // Priority:
-  // 1. Existing minute record (fileId !== 'new') → load saved data
-  // 2. New record with initialData from ViewSched/MainSched → pre-populate from schedule
-  // 3. Fallback → blank form
   useEffect(() => {
-    const allFiles = JSON.parse(localStorage.getItem('allMinutesFiles')) || [];
+    const allFiles    = JSON.parse(localStorage.getItem('allMinutesFiles')) || [];
     const allHearings = JSON.parse(localStorage.getItem('hearings')) || [];
 
     if (fileId !== 'new') {
-      // --- Load existing minute record ---
       const currentFile = allFiles.find(f => String(f.id) === String(fileId));
-
       if (currentFile) {
-        setCaseData({
-          docketNo: currentFile.docketNo || "",
-          matter: currentFile.matter || ""
-        });
+        setCaseData({ docketNo: currentFile.docketNo || "", matter: currentFile.matter || "" });
 
         if (currentFile.conferences && currentFile.conferences.length > 0) {
-          const firstConf = currentFile.conferences[0];
+          const firstConf  = currentFile.conferences[0];
           const hasParties =
             firstConf.requestingParties?.some(p => p && p.trim() !== "") ||
             firstConf.respondingParties?.some(p => p && p.trim() !== "");
 
           if (!hasParties && currentFile.linkedScheduleId) {
-            // Backfill parties from the linked hearing
             const linkedHearing = allHearings.find(
               h => String(h.id) === String(currentFile.linkedScheduleId)
             );
             if (linkedHearing) {
-              const updatedConferences = currentFile.conferences.map((conf, idx) => {
-                if (idx === 0) {
-                  return {
-                    ...conf,
-                    requestingParties: formatParties(linkedHearing.requestingParty),
-                    respondingParties: formatParties(linkedHearing.respondingParty),
-                    date: conf.date || buildDateFromSchedule(linkedHearing),
-                    time: conf.time || formatTo24Hour(linkedHearing.time?.split(' to ')[0] || "")
-                  };
-                }
-                return conf;
-              });
+              const updatedConferences = currentFile.conferences.map((conf, idx) =>
+                idx === 0 ? {
+                  ...conf,
+                  requestingParties: formatParties(linkedHearing.requestingParty),
+                  respondingParties: formatParties(linkedHearing.respondingParty),
+                  date: conf.date || buildDateFromSchedule(linkedHearing),
+                  time: conf.time || formatTo24Hour(linkedHearing.time?.split(' to ')[0] || "")
+                } : conf
+              );
               setConferences(updatedConferences);
             } else {
               setConferences(currentFile.conferences);
@@ -125,22 +109,14 @@ const MinutesInfo = () => {
             setConferences(currentFile.conferences);
           }
         }
-        return; // Done loading existing record
+        return;
       }
     }
 
-    // --- New record: pre-populate from schedule passed via location.state.initialData ---
     if (location.state?.initialData) {
       const passedData = location.state.initialData;
-
-      // Extract the time — handle "9:00 AM to 10:00 AM" or plain "9:00 AM"
-      const rawTime = passedData.time?.split(' to ')[0]?.trim() || passedData.time || "";
-
-      setCaseData({
-        docketNo: "",
-        matter: passedData.title || ""
-      });
-
+      const rawTime    = passedData.time?.split(' to ')[0]?.trim() || passedData.time || "";
+      setCaseData({ docketNo: "", matter: passedData.title || "" });
       setConferences([{
         date: buildDateFromSchedule(passedData),
         time: formatTo24Hour(rawTime),
@@ -153,40 +129,50 @@ const MinutesInfo = () => {
         totalAmount: ""
       }]);
     }
-    // else: blank form (default state is already blank)
-  }, [fileId]); // intentionally only re-runs if fileId changes
+  }, [fileId]);
 
-  // --- Calculations ---
-  const currentConf = conferences[currentStep - 1] || {};
-  const originalTotal = parseFloat(conferences[0]?.totalAmount) || 0;
-  const paidInPreviousSessions = conferences.reduce((acc, conf, index) => {
-    if (index < currentStep - 1) return acc + (parseFloat(conf.amountPaid) || 0);
-    return acc;
-  }, 0);
-  const balanceBroughtForward = originalTotal - paidInPreviousSessions;
-  const currentSessionPaid = parseFloat(currentConf?.amountPaid) || 0;
-  const remainingBalance = balanceBroughtForward - currentSessionPaid;
-  const isFullyPaid = originalTotal > 0 &&
+  const currentConf            = conferences[currentStep - 1] || {};
+  const originalTotal          = parseFloat(conferences[0]?.totalAmount) || 0;
+  const paidInPreviousSessions = conferences.reduce((acc, conf, index) =>
+    index < currentStep - 1 ? acc + (parseFloat(conf.amountPaid) || 0) : acc, 0);
+  const balanceBroughtForward  = originalTotal - paidInPreviousSessions;
+  const currentSessionPaid     = parseFloat(currentConf?.amountPaid) || 0;
+  const remainingBalance       = balanceBroughtForward - currentSessionPaid;
+  const isFullyPaid            = originalTotal > 0 &&
     (originalTotal - conferences.reduce((a, c) => a + (parseFloat(c.amountPaid) || 0), 0)) <= 0;
 
-  // --- Back Navigation ---
+  // -------------------------------------------------------------------
+  // Back Navigation
+  //
+  // Priority:
+  // 1. returnToArchives  → go to /schedule with openLogInArchives flag
+  //                        MainSched will open ActivityLog in 'archived' tab
+  // 2. returnToActivityLog → go to /schedule with openLog flag
+  //                        MainSched will open ActivityLog in 'active' tab
+  // 3. returnToMinutes   → go to /minutes
+  // 4. Came from ViewSched → go back to that ViewSched
+  // 5. Fallback          → /minutes
+  // -------------------------------------------------------------------
   const handleBackNavigation = () => {
+    if (location.state?.returnToArchives) {
+      navigate('/schedule', { state: { openLogInArchives: true } });
+      return;
+    }
     if (location.state?.returnToActivityLog) {
-      navigate('/schedule');
+      navigate('/schedule', { state: { openLog: true } });
       return;
     }
     if (location.state?.returnToMinutes) {
       navigate('/minutes');
       return;
     }
-    // Came from ViewSched/MainSched
     const scheduleData = location.state?.initialData;
-    const scheduleId = location.state?.scheduleId;
+    const scheduleId   = location.state?.scheduleId;
     if (scheduleData || scheduleId) {
       let scheduleToReturn = scheduleData;
       if (!scheduleToReturn && scheduleId) {
         const allSchedules = JSON.parse(localStorage.getItem('hearings')) || [];
-        scheduleToReturn = allSchedules.find(s => String(s.id) === String(scheduleId));
+        scheduleToReturn   = allSchedules.find(s => String(s.id) === String(scheduleId));
       }
       if (scheduleToReturn) {
         navigate('/schedule', { state: { returnToSchedule: scheduleToReturn } });
@@ -196,48 +182,40 @@ const MinutesInfo = () => {
     navigate('/minutes');
   };
 
-  // --- Save Logic ---
+  // -------------------------------------------------------------------
+  // Save Logic
+  // -------------------------------------------------------------------
   const handleSave = () => {
-    const allMinutes = JSON.parse(localStorage.getItem('allMinutesFiles')) || [];
+    const allMinutes          = JSON.parse(localStorage.getItem('allMinutesFiles')) || [];
+    const returnToArchives    = location.state?.returnToArchives;
     const returnToActivityLog = location.state?.returnToActivityLog;
-    const returnToMinutes = location.state?.returnToMinutes;
+    const returnToMinutes     = location.state?.returnToMinutes;
 
-    // Resolve the actual ID for this record
-    let actualId = fileId;
+    let actualId         = fileId;
     let linkedScheduleId = null;
     let scheduleToReturn = null;
 
     if (String(fileId) === 'new') {
-      // Generate a new unique ID
       actualId = allMinutes.length > 0
         ? Math.max(...allMinutes.map(d => parseInt(String(d.id).replace(/\D/g, '')) || 0)) + 1
         : Date.now();
-
-      // FIX: Use scheduleId from location.state as the linkedScheduleId
-      if (location.state?.scheduleId) {
-        linkedScheduleId = location.state.scheduleId;
-      }
+      if (location.state?.scheduleId) linkedScheduleId = location.state.scheduleId;
     } else {
-      // Preserve existing linkedScheduleId from the saved record
       const existingFile = allMinutes.find(f => String(f.id) === String(fileId));
-      if (existingFile?.linkedScheduleId) {
-        linkedScheduleId = existingFile.linkedScheduleId;
-      }
+      if (existingFile?.linkedScheduleId) linkedScheduleId = existingFile.linkedScheduleId;
     }
 
-    // Get scheduleToReturn for navigation after save
     if (linkedScheduleId) {
       const allSchedules = JSON.parse(localStorage.getItem('hearings')) || [];
-      scheduleToReturn = allSchedules.find(s => String(s.id) === String(linkedScheduleId));
+      scheduleToReturn   = allSchedules.find(s => String(s.id) === String(linkedScheduleId));
     } else if (location.state?.initialData) {
       scheduleToReturn = location.state.initialData;
     }
 
-    // Resolve officer name from linked hearing or passed initialData
     let officerName = location.state?.initialData?.officer || "N/A";
     if ((!officerName || officerName === "N/A") && linkedScheduleId) {
       const allSchedules = JSON.parse(localStorage.getItem('hearings')) || [];
-      const linked = allSchedules.find(s => String(s.id) === String(linkedScheduleId));
+      const linked       = allSchedules.find(s => String(s.id) === String(linkedScheduleId));
       if (linked?.officer) officerName = linked.officer;
     }
 
@@ -249,12 +227,12 @@ const MinutesInfo = () => {
       officer: officerName,
       timestamp: new Date().toISOString(),
       status: currentConf.status || "Pending",
-      conferences: conferences,
+      conferences,
       selected: false,
-      linkedScheduleId: linkedScheduleId  // FIX: always persist this
+      linkedScheduleId
     };
 
-    const index = allMinutes.findIndex(m => String(m.id) === String(actualId));
+    const index          = allMinutes.findIndex(m => String(m.id) === String(actualId));
     const updatedMinutes = index !== -1
       ? allMinutes.map((m, i) => i === index ? newEntry : m)
       : [newEntry, ...allMinutes];
@@ -264,8 +242,12 @@ const MinutesInfo = () => {
     toast.success("Minutes saved successfully!", {
       autoClose: 1500,
       onClose: () => {
-        if (returnToActivityLog) {
-          navigate('/schedule');
+        if (returnToArchives) {
+          // Return to ActivityLog open on Archives tab
+          navigate('/schedule', { state: { openLogInArchives: true } });
+        } else if (returnToActivityLog) {
+          // Return to ActivityLog open on Active tab
+          navigate('/schedule', { state: { openLog: true } });
         } else if (returnToMinutes) {
           navigate('/minutes');
         } else if (scheduleToReturn) {
@@ -277,7 +259,9 @@ const MinutesInfo = () => {
     });
   };
 
-  // --- Field/Party Handlers ---
+  // -------------------------------------------------------------------
+  // Field / Party Handlers
+  // -------------------------------------------------------------------
   const updateConfField = (field, value) => {
     setConferences(prev => {
       const updated = [...prev];
@@ -292,10 +276,10 @@ const MinutesInfo = () => {
 
   const updateParty = (type, index, val) => {
     setConferences(prev => {
-      const updated = [...prev];
+      const updated    = [...prev];
       const targetConf = { ...updated[currentStep - 1] };
-      const list = [...targetConf[type]];
-      list[index] = val;
+      const list       = [...targetConf[type]];
+      list[index]      = val;
       targetConf[type] = list;
       updated[currentStep - 1] = targetConf;
       return updated;
@@ -304,7 +288,7 @@ const MinutesInfo = () => {
 
   const addPartyRow = (type) => {
     setConferences(prev => {
-      const updated = [...prev];
+      const updated    = [...prev];
       const targetConf = { ...updated[currentStep - 1] };
       targetConf[type] = [...targetConf[type], ""];
       updated[currentStep - 1] = targetConf;
@@ -314,9 +298,9 @@ const MinutesInfo = () => {
 
   const deletePartyRow = (type, index) => {
     setConferences(prev => {
-      const updated = [...prev];
+      const updated    = [...prev];
       const targetConf = { ...updated[currentStep - 1] };
-      const list = [...targetConf[type]];
+      const list       = [...targetConf[type]];
       if (list.length > 1) list.splice(index, 1);
       else list[0] = "";
       targetConf[type] = list;
@@ -344,17 +328,14 @@ const MinutesInfo = () => {
   };
 
   const handleDeleteSession = () => {
-    if (conferences.length <= 1) {
-      toast.error("Cannot delete the only remaining session.");
-      return;
-    }
+    if (conferences.length <= 1) { toast.error("Cannot delete the only remaining session."); return; }
     setConferences(conferences.filter((_, i) => i !== currentStep - 1));
     setCurrentStep(1);
     toast.info("Session removed");
   };
 
   const handlePreviewPDF = () => {
-    const element = document.getElementById('pdf-content');
+    const element    = document.getElementById('pdf-content');
     setIsGeneratingPdf(true);
     const safeDocketNo = caseData.docketNo
       ? caseData.docketNo.replace(/[/\\?%*:|"<>]/g, '-')
@@ -521,43 +502,21 @@ const MinutesInfo = () => {
         <div className="top-fields">
           <div className="field-group">
             <label>DOCKET NO:</label>
-            <input
-              type="text"
-              value={caseData.docketNo}
-              onChange={(e) => setCaseData({ ...caseData, docketNo: e.target.value })}
-              style={pdfInputStyle}
-              placeholder="e.g., SENA-2024-001"
-            />
+            <input type="text" value={caseData.docketNo} onChange={(e) => setCaseData({ ...caseData, docketNo: e.target.value })} style={pdfInputStyle} placeholder="e.g., SENA-2024-001" />
           </div>
           <div className="field-group">
             <label>DATE:</label>
-            <input
-              type={isGeneratingPdf ? "text" : "date"}
-              value={currentConf?.date}
-              onChange={(e) => updateConfField('date', e.target.value)}
-              style={pdfInputStyle}
-            />
+            <input type={isGeneratingPdf ? "text" : "date"} value={currentConf?.date} onChange={(e) => updateConfField('date', e.target.value)} style={pdfInputStyle} />
           </div>
           <div className="field-group">
             <label>TIME:</label>
-            <input
-              type={isGeneratingPdf ? "text" : "time"}
-              value={currentConf?.time}
-              onChange={(e) => updateConfField('time', e.target.value)}
-              style={pdfInputStyle}
-            />
+            <input type={isGeneratingPdf ? "text" : "time"} value={currentConf?.time} onChange={(e) => updateConfField('time', e.target.value)} style={pdfInputStyle} />
           </div>
         </div>
 
         <div className="full-field">
           <label>IN THE MATTER OF REQUEST FOR ASSISTANCE BETWEEN:</label>
-          <input
-            type="text"
-            value={caseData.matter}
-            onChange={(e) => setCaseData({ ...caseData, matter: e.target.value })}
-            style={pdfInputStyle}
-            placeholder="Enter case matter"
-          />
+          <input type="text" value={caseData.matter} onChange={(e) => setCaseData({ ...caseData, matter: e.target.value })} style={pdfInputStyle} placeholder="Enter case matter" />
         </div>
 
         <div className="appearance-section">
@@ -568,24 +527,14 @@ const MinutesInfo = () => {
               {currentConf?.requestingParties?.map((name, i) => (
                 <div key={i} className="input-row">
                   <span className="row-num">{i + 1}.</span>
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => updateParty('requestingParties', i, e.target.value)}
-                    style={pdfInputStyle}
-                    placeholder="Full name"
-                  />
+                  <input type="text" value={name} onChange={(e) => updateParty('requestingParties', i, e.target.value)} style={pdfInputStyle} placeholder="Full name" />
                   {!isGeneratingPdf && (
-                    <button className="btn-delete-row" onClick={() => deletePartyRow('requestingParties', i)}>
-                      <FaTrash size={12} />
-                    </button>
+                    <button className="btn-delete-row" onClick={() => deletePartyRow('requestingParties', i)}><FaTrash size={12} /></button>
                   )}
                 </div>
               ))}
               {!isGeneratingPdf && (
-                <button className="add-name-btn" onClick={() => addPartyRow('requestingParties')}>
-                  <FaPlus /> Add Name
-                </button>
+                <button className="add-name-btn" onClick={() => addPartyRow('requestingParties')}><FaPlus /> Add Name</button>
               )}
             </div>
             <div className="column">
@@ -593,24 +542,14 @@ const MinutesInfo = () => {
               {currentConf?.respondingParties?.map((name, i) => (
                 <div key={i} className="input-row">
                   <span className="row-num">{i + 1}.</span>
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => updateParty('respondingParties', i, e.target.value)}
-                    style={pdfInputStyle}
-                    placeholder="Full name"
-                  />
+                  <input type="text" value={name} onChange={(e) => updateParty('respondingParties', i, e.target.value)} style={pdfInputStyle} placeholder="Full name" />
                   {!isGeneratingPdf && (
-                    <button className="btn-delete-row" onClick={() => deletePartyRow('respondingParties', i)}>
-                      <FaTrash size={12} />
-                    </button>
+                    <button className="btn-delete-row" onClick={() => deletePartyRow('respondingParties', i)}><FaTrash size={12} /></button>
                   )}
                 </div>
               ))}
               {!isGeneratingPdf && (
-                <button className="add-name-btn" onClick={() => addPartyRow('respondingParties')}>
-                  <FaPlus /> Add Name
-                </button>
+                <button className="add-name-btn" onClick={() => addPartyRow('respondingParties')}><FaPlus /> Add Name</button>
               )}
             </div>
           </div>
@@ -620,18 +559,11 @@ const MinutesInfo = () => {
           <div className="section-title-row">
             <h3>MINUTES OF CONFERENCE (SESSION {currentStep})</h3>
             {!isGeneratingPdf && (
-              <button className="btn-payment" onClick={() => setIsPaymentModalOpen(true)}>
-                Payment Terms
-              </button>
+              <button className="btn-payment" onClick={() => setIsPaymentModalOpen(true)}>Payment Terms</button>
             )}
           </div>
           {!isGeneratingPdf ? (
-            <textarea
-              placeholder="Issues and Concerns..."
-              value={currentConf?.concerns}
-              onChange={(e) => updateConfField('concerns', e.target.value)}
-              rows="6"
-            />
+            <textarea placeholder="Issues and Concerns..." value={currentConf?.concerns} onChange={(e) => updateConfField('concerns', e.target.value)} rows="6" />
           ) : (
             <div className="pdf-dynamic-text">{currentConf?.concerns || "No concerns recorded."}</div>
           )}
@@ -641,11 +573,7 @@ const MinutesInfo = () => {
               <div className="status-payment-stack" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div className="status-select-row" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                   <label style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>Status:</label>
-                  <select
-                    value={currentConf?.status}
-                    onChange={(e) => updateConfField('status', e.target.value)}
-                    style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
-                  >
+                  <select value={currentConf?.status} onChange={(e) => updateConfField('status', e.target.value)} style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
                     <option value="">Select</option>
                     <option value="Settled">Settled</option>
                     <option value="Partial">Settled (Partial)</option>
@@ -665,18 +593,10 @@ const MinutesInfo = () => {
                 )}
               </div>
               <div className="button-group" style={{ display: 'flex', gap: '15px' }}>
-                <button
-                  className="btn-preview"
-                  onClick={handlePreviewPDF}
-                  style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', background: '#4f46e5', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
-                >
+                <button className="btn-preview" onClick={handlePreviewPDF} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', background: '#4f46e5', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>
                   <FaDownload /> Preview & Download
                 </button>
-                <button
-                  className="btn-submit"
-                  onClick={handleSave}
-                  style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', background: '#10b981', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
-                >
+                <button className="btn-submit" onClick={handleSave} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', background: '#10b981', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>
                   <FaSave /> SAVE
                 </button>
               </div>
@@ -690,23 +610,11 @@ const MinutesInfo = () => {
           <div className="preview-modal-content">
             <div className="preview-header">
               <h3>Document Preview (Session {currentStep})</h3>
-              <button
-                className="btn-close-preview"
-                onClick={() => {
-                  setIsPreviewOpen(false);
-                  if (pdfUrl) URL.revokeObjectURL(pdfUrl);
-                }}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px' }}
-              >
+              <button className="btn-close-preview" onClick={() => { setIsPreviewOpen(false); if (pdfUrl) URL.revokeObjectURL(pdfUrl); }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px' }}>
                 <FaTimes />
               </button>
             </div>
-            <iframe
-              src={pdfUrl}
-              title="PDF Preview"
-              className="preview-iframe"
-              style={{ width: '100%', height: '80vh', border: 'none' }}
-            />
+            <iframe src={pdfUrl} title="PDF Preview" className="preview-iframe" style={{ width: '100%', height: '80vh', border: 'none' }} />
           </div>
         </div>
       )}
